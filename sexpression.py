@@ -130,14 +130,14 @@ def parse_sexp(iterator):
             elif c == ')':
                 break
             elif c == "'":
-                c = iterator.next()
-                if c == '(':
-                    (subsexp, c) = parse_sexp(iterator)
-                    assert c == ')'
-                    c = iterator.next()
-                else:
-                    (subsexp, c) = parse_atom(chain([c], iterator))
-                sexp.append(Quoted(subsexp))
+                (subsexp, c) = parse_sexp(iterator)
+                sexp.append(Quoted(subsexp[0]))
+                sexp.extend(subsexp[1:])
+                if c == ')':
+                    try:
+                        c == iterator.next()
+                    except StopIteration:
+                        return (sexp, c)
             else:
                 (atom, c) = parse_atom(chain([c], iterator))
                 sexp.append(atom)

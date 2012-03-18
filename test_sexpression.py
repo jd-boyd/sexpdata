@@ -7,12 +7,12 @@ data_identity = [
     [Symbol('a')],
     [String('a')],
     Quoted(Symbol('a')),
-    # Quoted(String('a')),
-    # Quoted([Symbol('a')]),
-    # Quoted([String('a')]),
-    # [Symbol('a'), Symbol('b')],
-    # [Symbol('a'), [Symbol('b')]],
-    # [Symbol('a'), Quoted([Symbol('b')])],
+    Quoted(String('a')),
+    Quoted([Symbol('a')]),
+    Quoted([String('a')]),
+    [Symbol('a'), Symbol('b')],
+    [Symbol('a'), [Symbol('b')]],
+    [Symbol('a'), Quoted([Symbol('b')])],
 ]
 
 
