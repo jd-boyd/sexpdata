@@ -73,6 +73,10 @@ class Quoted(SExpBase):
         return "'{0}".format(tosexp(self._val))
 
 
+class ParenMismatched(Exception):
+    pass
+
+
 def parse_str(iterator):
     while True:
         c = iterator.next()
@@ -125,7 +129,11 @@ def parse_sexp(iterator):
             elif c == '(':
                 (subsexp, c) = parse_sexp(iterator)
                 sexp.append(subsexp)
-                assert c == ')'
+                if c != ')':
+                    raise ParenMismatched(
+                        "Not enough closing parentheses. "
+                        "Expected ')' to be the last letter in the sexp. "
+                        "Got: {0!r}".format(c))
                 c = iterator.next()
             elif c == ')':
                 break
@@ -158,16 +166,22 @@ def parse(iterable):
     [[Symbol('a'), Quoted(Symbol('b'))]]
     >>> parse("(a '(b))")
     [[Symbol('a'), Quoted([Symbol('b')])]]
-    >>> parse("(a (b)")  # not enough ')'
+    >>> parse("(a (b)")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
         ...
-    AssertionError
-    >>> parse("(a b))")  # too many ')'
+    ParenMismatched: Not enough closing parentheses.
+    Expected ')' to be the last letter in the sexp. Got: None
+    >>> parse("(a b))")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
         ...
-    AssertionError
+    ParenMismatched: Too many closing parentheses.
+    Expected no character left in the sexp. Got: ')'
 
     """
     (sexp, c) = parse_sexp(iter(iterable))
-    assert c is None
+    if c is not None:
+        raise ParenMismatched(
+            "Too many closing parentheses. "
+            "Expected no character left in the sexp. "
+            "Got: {0!r}".format(c))
     return sexp
