@@ -1,5 +1,6 @@
-from sexpression import parse, tosexp, Symbol, String, Quoted
-from nose.tools import eq_
+from sexpression import (
+    parse, tosexp, Symbol, String, Quoted, ParenMismatched)
+from nose.tools import eq_, raises
 
 data_identity = [
     Symbol('a'),
@@ -23,3 +24,13 @@ def check_identity(obj):
 def test_identity():
     for data in data_identity:
         yield (check_identity, data)
+
+
+@raises(ParenMismatched)
+def test_too_many_parentheses():
+    parse("(a b))")
+
+
+@raises(ParenMismatched)
+def test_not_enough_parentheses():
+    parse("(a (b)")
