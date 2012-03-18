@@ -38,6 +38,12 @@ class SExpBase(object):
     def __repr__(self):
         return "{0}({1!r})".format(self.__class__.__name__, self._val)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._val == other._val
+        else:
+            return False
+
     def tosexp(self):
         raise NotImplementedError
 
@@ -50,8 +56,15 @@ class Symbol(SExpBase):
 
 class String(SExpBase):
 
+    _lisp_quoted_specials = {  # from Pymacs
+        '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
+        '\n': '\\n', '\r': '\\r', '\t': '\\t'}
+
     def tosexp(self):
-        return repr(self._val)
+        val = self._val
+        for (s, q) in self._lisp_quoted_specials.iteritems():
+            val = val.replace(s, q)
+        return '"{0}"'.format(val)
 
 
 class Quoted(SExpBase):
@@ -104,7 +117,7 @@ def parse_sexp(iterator):
             if c is None:
                 break
             elif c == '"':
-                sexp.append(String(''.join(parse_str(chain([c], iterator)))))
+                sexp.append(String(''.join(parse_str(iterator))))
                 c = iterator.next()
             elif c in whitespace:
                 c = iterator.next()
