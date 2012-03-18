@@ -4,25 +4,60 @@ from string import whitespace
 atom_end = set('()"\'') | set(whitespace)
 
 
+def tosexp(obj):
+    """
+    Convert python object into s-expression.
+
+    >>> tosexp([Symbol('a'), Symbol('b')])
+    '(a b)'
+    >>> tosexp(Symbol('a'))
+    'a'
+    >>> tosexp([Symbol('a'), Quoted(Symbol('b'))])
+    "(a 'b)"
+    >>> tosexp([Symbol('a'), Quoted([Symbol('b')])])
+    "(a '(b))"
+
+    """
+    if isinstance(obj, list):
+        return "({0})".format(' '.join(map(tosexp, obj)))
+    elif isinstance(obj, (int, float)):
+        return str(obj)
+    elif isinstance(obj, SExpBase):
+        return obj.tosexp()
+    else:
+        raise TypeError(
+            "Object of type '{0}' cannot be converted by `tosexp`. "
+            "It's value is '{1!r}'".format(type(obj), obj))
+
+
 class SExpBase(object):
 
-    def __init__(self, name):
-        self._name = name
+    def __init__(self, val):
+        self._val = val
 
     def __repr__(self):
-        return "{0}({1!r})".format(self.__class__.__name__, self._name)
+        return "{0}({1!r})".format(self.__class__.__name__, self._val)
+
+    def tosexp(self):
+        raise NotImplementedError
 
 
 class Symbol(SExpBase):
-    pass
+
+    def tosexp(self):
+        return self._val
 
 
 class String(SExpBase):
-    pass
+
+    def tosexp(self):
+        return repr(self._val)
 
 
 class Quoted(SExpBase):
-    pass
+
+    def tosexp(self):
+        return "'{0}".format(tosexp(self._val))
 
 
 def parse_str(iterator):
