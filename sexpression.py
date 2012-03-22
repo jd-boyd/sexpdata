@@ -1,5 +1,6 @@
 from itertools import chain
 from string import whitespace
+from collections import Iterator
 
 atom_end = set('()"\'') | set(whitespace)
 
@@ -75,6 +76,31 @@ class Quoted(SExpBase):
 
 class ParenMismatched(Exception):
     pass
+
+
+class LookAheadIterator(Iterator):
+
+    def __init__(self, iterable):
+        self._iter = iter(iterable)
+
+    def next(self):
+        if hasattr(self, '_next_item'):
+            item = self._next_item
+            del self._next_item
+        else:
+            item = self._iter.next()
+        return item
+
+    def has_next(self):
+        try:
+            self.lookahead()
+            return True
+        except StopIteration:
+            return False
+
+    def lookahead(self):
+        self._next_item = self.next()
+        return self._next_item
 
 
 def parse_str(iterator):
