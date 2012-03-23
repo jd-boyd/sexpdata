@@ -2,9 +2,9 @@ from string import whitespace
 from collections import Iterator
 import functools
 
-PARENS = {'(': ')', '[': ']'}
-CPARENS = set(PARENS.values())
-ATOM_END = set(PARENS) | set(CPARENS) | set('"\'') | set(whitespace)
+BRACKETS = {'(': ')', '[': ']'}
+CBRACKETS = set(BRACKETS.values())
+ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
 def tosexp(obj):
@@ -22,7 +22,7 @@ def tosexp(obj):
 
     """
     if isinstance(obj, list):
-        return Parenthesis(obj, '(').tosexp()
+        return Bracket(obj, '(').tosexp()
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, SExpBase):
@@ -76,34 +76,34 @@ class Quoted(SExpBase):
         return "'{0}".format(tosexp(self._val))
 
 
-class Parenthesis(SExpBase):
+class Bracket(SExpBase):
 
-    def __init__(self, val, par):
-        assert par in PARENS
-        super(Parenthesis, self).__init__(val)
-        self._par = par
+    def __init__(self, val, bra):
+        assert bra in BRACKETS
+        super(Bracket, self).__init__(val)
+        self._bra = bra
 
     def __repr__(self):
         return "{0}({1!r}, {2!r})".format(
-            self.__class__.__name__, self._val, self._par)
+            self.__class__.__name__, self._val, self._bra)
 
     def tosexp(self):
         return "{0}{1}{2}".format(
-            self._par, ' '.join(map(tosexp, self._val)), PARENS[self._par])
+            self._bra, ' '.join(map(tosexp, self._val)), BRACKETS[self._bra])
 
 
-def paren(val, par):
-    if par == '(':
+def bracket(val, bra):
+    if bra == '(':
         return val
     else:
-        return Parenthesis(val, par)
+        return Bracket(val, bra)
 
 
-class ExpectClosingParen(Exception):
+class ExpectClosingBracket(Exception):
 
     def __init__(self, got, expect):
-        super(ExpectClosingParen, self).__init__(
-            "Not enough closing parentheses. "
+        super(ExpectClosingBracket, self).__init__(
+            "Not enough closing brackets. "
             "Expected {0!r} to be the last letter in the sexp. "
             "Got: {1!r}".format(expect, got))
 
@@ -112,7 +112,7 @@ class ExpectNothing(Exception):
 
     def __init__(self, got):
         super(ExpectNothing, self).__init__(
-            "Too many closing parentheses. "
+            "Too many closing brackets. "
             "Expected no character left in the sexp. "
             "Got: {0!r}".format(got))
 
@@ -234,14 +234,14 @@ def parse_sexp(laiter):
         elif c in whitespace:
             laiter.next()
             continue
-        elif c in PARENS:
-            close = PARENS[c]
+        elif c in BRACKETS:
+            close = BRACKETS[c]
             laiter.next()
-            yield paren(parse_sexp(laiter), c)
+            yield bracket(parse_sexp(laiter), c)
             if laiter.lookahead_safe() != close:
-                raise ExpectClosingParen(laiter.lookahead_safe(), close)
+                raise ExpectClosingBracket(laiter.lookahead_safe(), close)
             laiter.next()
-        elif c in CPARENS:
+        elif c in CBRACKETS:
             break
         elif c == "'":
             laiter.next()

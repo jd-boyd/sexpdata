@@ -1,6 +1,6 @@
 from sexpression import (
-    ExpectClosingParen, ExpectNothing, LookAheadIterator,
-    parse, tosexp, Symbol, String, Quoted, paren,
+    ExpectClosingBracket, ExpectNothing, LookAheadIterator,
+    parse, tosexp, Symbol, String, Quoted, bracket,
 )
 from nose.tools import eq_, raises
 
@@ -20,8 +20,8 @@ data_identity = [
     [Symbol('a'), Quoted([Symbol('b')]), Symbol('c')],
     [Symbol('a'), Quoted(Symbol('b')), Quoted(Symbol('c')), Symbol('d')],
     [Symbol('a'), Quoted(Symbol('b')), Symbol('c'), Quoted(Symbol('d'))],
-    [paren([1, 2, 3], '[')],
-    [paren([1, [2, paren([3], '[')]], '[')],
+    [bracket([1, 2, 3], '[')],
+    [bracket([1, [2, bracket([3], '[')]], '[')],
 ]
 
 
@@ -35,12 +35,12 @@ def test_identity():
 
 
 @raises(ExpectNothing)
-def test_too_many_parentheses():
+def test_too_many_brackets():
     parse("(a b))")
 
 
-@raises(ExpectClosingParen)
-def test_not_enough_parentheses():
+@raises(ExpectClosingBracket)
+def test_not_enough_brackets():
     parse("(a (b)")
 
 
