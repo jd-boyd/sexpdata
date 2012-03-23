@@ -143,7 +143,7 @@ def atom(token):
 def parse_sexp(laiter):
     sexp = []
     try:
-        while True:
+        while laiter.has_next():
             c = laiter.lookahead()
             if c is None:
                 break
@@ -172,7 +172,7 @@ def parse_sexp(laiter):
             else:
                 sexp.append(parse_atom(laiter))
     except StopIteration:
-        pass  # FIXME: get rid of this
+        assert False
     return sexp
 
 
