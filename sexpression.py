@@ -124,6 +124,42 @@ class LookAheadIterator(Iterator):
 
 
 def gas(converter):
+    """
+    Decorator to convert iterator to a function.
+
+    It is just a function composition. The following two codes are
+    equivalent.
+
+    Using `@gas`::
+
+        @gas(converter)
+        def generator(args):
+            ...
+
+        result = generator(args)
+
+    Manually do the same::
+
+        def generator(args):
+            ...
+
+        result = converter(generator(args))
+
+    Although this decorator can be used for composition of any kind of
+    functions, it must be used only for generators as the name
+    suggests (gas = Generator AS).
+
+    Example:
+
+    >>> @gas(list)
+    ... def f():
+    ...     for i in range(3):
+    ...         yield i
+    ...
+    >>> f()  # this gives a list, not an iterator
+    [0, 1, 2]
+
+    """
     def wrapper(generator):
         @functools.wraps(generator)
         def func(*args, **kwds):
