@@ -2,7 +2,9 @@ from string import whitespace
 from collections import Iterator
 import functools
 
-atom_end = set('()"\'') | set(whitespace)
+PARENS = {'(': ')', '[': ']'}
+CPARENS = set(PARENS.values())
+ATOM_END = set(PARENS) | set(CPARENS) | set('"\'') | set(whitespace)
 
 
 def tosexp(obj):
@@ -20,7 +22,7 @@ def tosexp(obj):
 
     """
     if isinstance(obj, list):
-        return "({0})".format(' '.join(map(tosexp, obj)))
+        return Parenthesis(obj, '(').tosexp()
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, SExpBase):
@@ -74,13 +76,36 @@ class Quoted(SExpBase):
         return "'{0}".format(tosexp(self._val))
 
 
+class Parenthesis(SExpBase):
+
+    def __init__(self, val, par):
+        assert par in PARENS
+        super(Parenthesis, self).__init__(val)
+        self._par = par
+
+    def __repr__(self):
+        return "{0}({1!r}, {2!r})".format(
+            self.__class__.__name__, self._val, self._par)
+
+    def tosexp(self):
+        return "{0}{1}{2}".format(
+            self._par, ' '.join(map(tosexp, self._val)), PARENS[self._par])
+
+
+def paren(val, par):
+    if par == '(':
+        return val
+    else:
+        return Parenthesis(val, par)
+
+
 class ExpectClosingParen(Exception):
 
-    def __init__(self, got):
+    def __init__(self, got, expect):
         super(ExpectClosingParen, self).__init__(
             "Not enough closing parentheses. "
-            "Expected ')' to be the last letter in the sexp. "
-            "Got: {0!r}".format(got))
+            "Expected {0!r} to be the last letter in the sexp. "
+            "Got: {1!r}".format(expect, got))
 
 
 class ExpectNothing(Exception):
@@ -185,7 +210,7 @@ def parse_str(laiter):
 @gas(lambda x: atom(''.join(x)))
 def parse_atom(laiter):
     while laiter.has_next():
-        if laiter.lookahead() in atom_end:
+        if laiter.lookahead() in ATOM_END:
             break
         yield laiter.next()
 
@@ -209,13 +234,14 @@ def parse_sexp(laiter):
         elif c in whitespace:
             laiter.next()
             continue
-        elif c == '(':
+        elif c in PARENS:
+            close = PARENS[c]
             laiter.next()
-            yield parse_sexp(laiter)
-            if laiter.lookahead_safe() != ')':
-                raise ExpectClosingParen(laiter.lookahead_safe())
+            yield paren(parse_sexp(laiter), c)
+            if laiter.lookahead_safe() != close:
+                raise ExpectClosingParen(laiter.lookahead_safe(), close)
             laiter.next()
-        elif c == ')':
+        elif c in CPARENS:
             break
         elif c == "'":
             laiter.next()

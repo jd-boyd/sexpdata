@@ -1,6 +1,6 @@
 from sexpression import (
     ExpectClosingParen, ExpectNothing, LookAheadIterator,
-    parse, tosexp, Symbol, String, Quoted,
+    parse, tosexp, Symbol, String, Quoted, paren,
 )
 from nose.tools import eq_, raises
 
@@ -20,6 +20,8 @@ data_identity = [
     [Symbol('a'), Quoted([Symbol('b')]), Symbol('c')],
     [Symbol('a'), Quoted(Symbol('b')), Quoted(Symbol('c')), Symbol('d')],
     [Symbol('a'), Quoted(Symbol('b')), Symbol('c'), Quoted(Symbol('d'))],
+    [paren([1, 2, 3], '[')],
+    [paren([1, [2, paren([3], '[')]], '[')],
 ]
 
 
