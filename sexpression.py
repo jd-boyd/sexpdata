@@ -145,13 +145,12 @@ def parse_str(laiter):
             yield c
 
 
+@gas(lambda x: atom(''.join(x)))
 def parse_atom(laiter):
-    chars = []
     while laiter.has_next():
         if laiter.lookahead() in atom_end:
             break
-        chars.append(laiter.next())
-    return atom(''.join(chars))
+        yield laiter.next()
 
 
 def atom(token):
@@ -164,21 +163,21 @@ def atom(token):
             return Symbol(token)
 
 
+@gas(list)
 def parse_sexp(laiter):
-    sexp = []
     while laiter.has_next():
         c = laiter.lookahead()
         if c is None:
             break
         elif c == '"':
             laiter.next()
-            sexp.append(parse_str(laiter))
+            yield parse_str(laiter)
         elif c in whitespace:
             laiter.next()
             continue
         elif c == '(':
             laiter.next()
-            sexp.append(parse_sexp(laiter))
+            yield parse_sexp(laiter)
             if laiter.lookahead_safe() != ')':
                 raise ExpectClosingParen(laiter.lookahead_safe())
             laiter.next()
@@ -187,11 +186,11 @@ def parse_sexp(laiter):
         elif c == "'":
             laiter.next()
             subsexp = parse_sexp(laiter)
-            sexp.append(Quoted(subsexp[0]))
-            sexp.extend(subsexp[1:])
+            yield Quoted(subsexp[0])
+            for sexp in subsexp[1:]:
+                yield sexp
         else:
-            sexp.append(parse_atom(laiter))
-    return sexp
+            yield parse_atom(laiter)
 
 
 def parse(iterable):
