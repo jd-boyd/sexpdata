@@ -1,5 +1,7 @@
 from sexpression import (
-    parse, tosexp, Symbol, String, Quoted, ParenMismatched, LookAheadIterator)
+    ExpectClosingParen, ExpectNothing, LookAheadIterator,
+    parse, tosexp, Symbol, String, Quoted,
+)
 from nose.tools import eq_, raises
 
 data_identity = [
@@ -30,12 +32,12 @@ def test_identity():
         yield (check_identity, data)
 
 
-@raises(ParenMismatched)
+@raises(ExpectNothing)
 def test_too_many_parentheses():
     parse("(a b))")
 
 
-@raises(ParenMismatched)
+@raises(ExpectClosingParen)
 def test_not_enough_parentheses():
     parse("(a (b)")
 

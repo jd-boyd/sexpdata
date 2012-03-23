@@ -73,8 +73,22 @@ class Quoted(SExpBase):
         return "'{0}".format(tosexp(self._val))
 
 
-class ParenMismatched(Exception):
-    pass
+class ExpectClosingParen(Exception):
+
+    def __init__(self, got):
+        super(ExpectClosingParen, self).__init__(
+            "Not enough closing parentheses. "
+            "Expected ')' to be the last letter in the sexp. "
+            "Got: {0!r}".format(got))
+
+
+class ExpectNothing(Exception):
+
+    def __init__(self, got):
+        super(ExpectNothing, self).__init__(
+            "Too many closing parentheses. "
+            "Expected no character left in the sexp. "
+            "Got: {0!r}".format(got))
 
 
 class LookAheadIterator(Iterator):
@@ -155,10 +169,7 @@ def parse_sexp(laiter):
             laiter.next()
             sexp.append(parse_sexp(laiter))
             if laiter.lookahead_safe() != ')':
-                raise ParenMismatched(
-                    "Not enough closing parentheses. "
-                    "Expected ')' to be the last letter in the sexp. "
-                    "Got: {0!r}".format(laiter.lookahead_safe()))
+                raise ExpectClosingParen(laiter.lookahead_safe())
             laiter.next()
         elif c == ')':
             break
@@ -187,20 +198,17 @@ def parse(iterable):
     >>> parse("(a (b)")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
         ...
-    ParenMismatched: Not enough closing parentheses.
+    ExpectClosingParen: Not enough closing parentheses.
     Expected ')' to be the last letter in the sexp. Got: None
     >>> parse("(a b))")  #doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
         ...
-    ParenMismatched: Too many closing parentheses.
+    ExpectNothing: Too many closing parentheses.
     Expected no character left in the sexp. Got: ')'
 
     """
     laiter = LookAheadIterator(iterable)
     sexp = parse_sexp(laiter)
     if laiter.has_next():
-        raise ParenMismatched(
-            "Too many closing parentheses. "
-            "Expected no character left in the sexp. "
-            "Got: {0!r}".format(laiter.lookahead()))
+        raise ExpectNothing(laiter.lookahead())
     return sexp
