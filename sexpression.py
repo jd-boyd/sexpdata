@@ -170,6 +170,7 @@ def gas(converter):
 
 @gas(lambda x: String(''.join(x)))
 def parse_str(laiter):
+    assert laiter.next() == '"'
     while True:
         c = laiter.next()
         if c == '"':
@@ -204,7 +205,6 @@ def parse_sexp(laiter):
     while laiter.has_next():
         c = laiter.lookahead()
         if c == '"':
-            laiter.next()
             yield parse_str(laiter)
         elif c in whitespace:
             laiter.next()
