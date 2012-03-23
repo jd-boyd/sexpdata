@@ -195,16 +195,6 @@ def parse(iterable):
     [[Symbol('a'), Quoted(Symbol('b'))]]
     >>> parse("(a '(b))")
     [[Symbol('a'), Quoted([Symbol('b')])]]
-    >>> parse("(a (b)")  #doctest: +NORMALIZE_WHITESPACE
-    Traceback (most recent call last):
-        ...
-    ExpectClosingParen: Not enough closing parentheses.
-    Expected ')' to be the last letter in the sexp. Got: None
-    >>> parse("(a b))")  #doctest: +NORMALIZE_WHITESPACE
-    Traceback (most recent call last):
-        ...
-    ExpectNothing: Too many closing parentheses.
-    Expected no character left in the sexp. Got: ')'
 
     """
     laiter = LookAheadIterator(iterable)
