@@ -142,37 +142,34 @@ def atom(token):
 
 def parse_sexp(laiter):
     sexp = []
-    try:
-        while laiter.has_next():
-            c = laiter.lookahead()
-            if c is None:
-                break
-            elif c == '"':
-                laiter.next()
-                sexp.append(String(''.join(parse_str(laiter))))
-            elif c in whitespace:
-                laiter.next()
-                continue
-            elif c == '(':
-                laiter.next()
-                sexp.append(parse_sexp(laiter))
-                if laiter.lookahead_safe() != ')':
-                    raise ParenMismatched(
-                        "Not enough closing parentheses. "
-                        "Expected ')' to be the last letter in the sexp. "
-                        "Got: {0!r}".format(laiter.lookahead_safe()))
-                laiter.next()
-            elif c == ')':
-                break
-            elif c == "'":
-                laiter.next()
-                subsexp = parse_sexp(laiter)
-                sexp.append(Quoted(subsexp[0]))
-                sexp.extend(subsexp[1:])
-            else:
-                sexp.append(parse_atom(laiter))
-    except StopIteration:
-        assert False
+    while laiter.has_next():
+        c = laiter.lookahead()
+        if c is None:
+            break
+        elif c == '"':
+            laiter.next()
+            sexp.append(String(''.join(parse_str(laiter))))
+        elif c in whitespace:
+            laiter.next()
+            continue
+        elif c == '(':
+            laiter.next()
+            sexp.append(parse_sexp(laiter))
+            if laiter.lookahead_safe() != ')':
+                raise ParenMismatched(
+                    "Not enough closing parentheses. "
+                    "Expected ')' to be the last letter in the sexp. "
+                    "Got: {0!r}".format(laiter.lookahead_safe()))
+            laiter.next()
+        elif c == ')':
+            break
+        elif c == "'":
+            laiter.next()
+            subsexp = parse_sexp(laiter)
+            sexp.append(Quoted(subsexp[0]))
+            sexp.extend(subsexp[1:])
+        else:
+            sexp.append(parse_atom(laiter))
     return sexp
 
 
