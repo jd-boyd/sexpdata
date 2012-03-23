@@ -14,6 +14,10 @@ data_identity = [
     [Symbol('a'), Symbol('b')],
     [Symbol('a'), [Symbol('b')]],
     [Symbol('a'), Quoted([Symbol('b')])],
+    [Symbol('a'), Quoted(Symbol('b')), Symbol('c')],
+    [Symbol('a'), Quoted([Symbol('b')]), Symbol('c')],
+    [Symbol('a'), Quoted(Symbol('b')), Quoted(Symbol('c')), Symbol('d')],
+    [Symbol('a'), Quoted(Symbol('b')), Symbol('c'), Quoted(Symbol('d'))],
 ]
 
 

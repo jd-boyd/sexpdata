@@ -168,7 +168,7 @@ def parse_sexp(laiter):
                 laiter.next()
                 subsexp = parse_sexp(laiter)
                 sexp.append(Quoted(subsexp[0]))
-                sexp.extend(subsexp[1:])  # FIXME: do I need this?
+                sexp.extend(subsexp[1:])
             else:
                 sexp.append(parse_atom(laiter))
     except StopIteration:
