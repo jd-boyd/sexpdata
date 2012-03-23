@@ -203,9 +203,7 @@ def atom(token):
 def parse_sexp(laiter):
     while laiter.has_next():
         c = laiter.lookahead()
-        if c is None:
-            break
-        elif c == '"':
+        if c == '"':
             laiter.next()
             yield parse_str(laiter)
         elif c in whitespace:
