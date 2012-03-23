@@ -103,27 +103,27 @@ class LookAheadIterator(Iterator):
         return self._next_item
 
 
-def parse_str(iterator):
+def parse_str(laiter):
     while True:
-        c = iterator.next()
+        c = laiter.next()
         if c == '"':
             return
         elif c == '\\':
             yield c
-            yield iterator.next()
+            yield laiter.next()
         else:
             yield c
 
 
-def parse_atom(iterator):
+def parse_atom(laiter):
     chars = []
-    c = iterator.next()
+    c = laiter.next()
     try:
         while True:
             if c in atom_end:
                 break
             chars.append(c)
-            c = iterator.next()
+            c = laiter.next()
     except StopIteration:
         c = None
     return (atom(''.join(chars)), c)
@@ -139,41 +139,41 @@ def atom(token):
             return Symbol(token)
 
 
-def parse_sexp(iterator):
-    c = iterator.next()
+def parse_sexp(laiter):
+    c = laiter.next()
     sexp = []
     try:
         while True:
             if c is None:
                 break
             elif c == '"':
-                sexp.append(String(''.join(parse_str(iterator))))
-                c = iterator.next()
+                sexp.append(String(''.join(parse_str(laiter))))
+                c = laiter.next()
             elif c in whitespace:
-                c = iterator.next()
+                c = laiter.next()
                 continue
             elif c == '(':
-                (subsexp, c) = parse_sexp(iterator)
+                (subsexp, c) = parse_sexp(laiter)
                 sexp.append(subsexp)
                 if c != ')':
                     raise ParenMismatched(
                         "Not enough closing parentheses. "
                         "Expected ')' to be the last letter in the sexp. "
                         "Got: {0!r}".format(c))
-                c = iterator.next()
+                c = laiter.next()
             elif c == ')':
                 break
             elif c == "'":
-                (subsexp, c) = parse_sexp(iterator)
+                (subsexp, c) = parse_sexp(laiter)
                 sexp.append(Quoted(subsexp[0]))
                 sexp.extend(subsexp[1:])
                 if c == ')':
                     try:
-                        c == iterator.next()
+                        c == laiter.next()
                     except StopIteration:
                         return (sexp, c)
             else:
-                (atom, c) = parse_atom(chain([c], iterator))
+                (atom, c) = parse_atom(chain([c], laiter))
                 sexp.append(atom)
     except StopIteration:
         c = None
@@ -204,7 +204,7 @@ def parse(iterable):
     Expected no character left in the sexp. Got: ')'
 
     """
-    (sexp, c) = parse_sexp(iter(iterable))
+    (sexp, c) = parse_sexp(LookAheadIterator(iterable))
     if c is not None:
         raise ParenMismatched(
             "Too many closing parentheses. "
