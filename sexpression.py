@@ -1,5 +1,6 @@
 from string import whitespace
 from collections import Iterator
+import functools
 
 atom_end = set('()"\'') | set(whitespace)
 
@@ -122,6 +123,16 @@ class LookAheadIterator(Iterator):
             return default
 
 
+def gas(converter):
+    def wrapper(generator):
+        @functools.wraps(generator)
+        def func(*args, **kwds):
+            return converter(generator(*args, **kwds))
+        return func
+    return wrapper
+
+
+@gas(lambda x: String(''.join(x)))
 def parse_str(laiter):
     while True:
         c = laiter.next()
@@ -161,7 +172,7 @@ def parse_sexp(laiter):
             break
         elif c == '"':
             laiter.next()
-            sexp.append(String(''.join(parse_str(laiter))))
+            sexp.append(parse_str(laiter))
         elif c in whitespace:
             laiter.next()
             continue
