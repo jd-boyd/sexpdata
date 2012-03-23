@@ -102,6 +102,12 @@ class LookAheadIterator(Iterator):
         self._next_item = self.next()
         return self._next_item
 
+    def lookahead_safe(self, default=None):
+        if self.has_next():
+            return self.lookahead()
+        else:
+            return default
+
 
 def parse_str(laiter):
     while True:
@@ -117,16 +123,11 @@ def parse_str(laiter):
 
 def parse_atom(laiter):
     chars = []
-    c = laiter.next()
-    try:
-        while True:
-            if c in atom_end:
-                break
-            chars.append(c)
-            c = laiter.next()
-    except StopIteration:
-        c = None
-    return (atom(''.join(chars)), c)
+    while laiter.has_next():
+        if laiter.lookahead() in atom_end:
+            break
+        chars.append(laiter.next())
+    return atom(''.join(chars))
 
 
 def atom(token):
@@ -140,44 +141,39 @@ def atom(token):
 
 
 def parse_sexp(laiter):
-    c = laiter.next()
     sexp = []
     try:
         while True:
+            c = laiter.lookahead()
             if c is None:
                 break
             elif c == '"':
+                laiter.next()
                 sexp.append(String(''.join(parse_str(laiter))))
-                c = laiter.next()
             elif c in whitespace:
-                c = laiter.next()
+                laiter.next()
                 continue
             elif c == '(':
-                (subsexp, c) = parse_sexp(laiter)
-                sexp.append(subsexp)
-                if c != ')':
+                laiter.next()
+                sexp.append(parse_sexp(laiter))
+                if laiter.lookahead_safe() != ')':
                     raise ParenMismatched(
                         "Not enough closing parentheses. "
                         "Expected ')' to be the last letter in the sexp. "
-                        "Got: {0!r}".format(c))
-                c = laiter.next()
+                        "Got: {0!r}".format(laiter.lookahead_safe()))
+                laiter.next()
             elif c == ')':
                 break
             elif c == "'":
-                (subsexp, c) = parse_sexp(laiter)
+                laiter.next()
+                subsexp = parse_sexp(laiter)
                 sexp.append(Quoted(subsexp[0]))
-                sexp.extend(subsexp[1:])
-                if c == ')':
-                    try:
-                        c == laiter.next()
-                    except StopIteration:
-                        return (sexp, c)
+                sexp.extend(subsexp[1:])  # FIXME: do I need this?
             else:
-                (atom, c) = parse_atom(chain([c], laiter))
-                sexp.append(atom)
+                sexp.append(parse_atom(laiter))
     except StopIteration:
-        c = None
-    return (sexp, c)
+        pass  # FIXME: get rid of this
+    return sexp
 
 
 def parse(iterable):
@@ -204,10 +200,11 @@ def parse(iterable):
     Expected no character left in the sexp. Got: ')'
 
     """
-    (sexp, c) = parse_sexp(LookAheadIterator(iterable))
-    if c is not None:
+    laiter = LookAheadIterator(iterable)
+    sexp = parse_sexp(laiter)
+    if laiter.has_next():
         raise ParenMismatched(
             "Too many closing parentheses. "
             "Expected no character left in the sexp. "
-            "Got: {0!r}".format(c))
+            "Got: {0!r}".format(laiter.lookahead()))
     return sexp
