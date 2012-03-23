@@ -1,4 +1,3 @@
-from itertools import chain
 from string import whitespace
 from collections import Iterator
 
