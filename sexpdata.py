@@ -7,20 +7,57 @@ CBRACKETS = set(BRACKETS.values())
 ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
-def tosexp(obj):
+def load(filelike):
+    """
+    Load object from S-expression stored in `filelike`.
+    """
+    return loads(filelike.read())
+
+
+def loads(string):
+    """
+    Load object from S-expression `string`.
+
+    >>> loads("(a b)")
+    [Symbol('a'), Symbol('b')]
+    >>> loads("a")
+    Symbol('a')
+    >>> loads("(a 'b)")
+    [Symbol('a'), Quoted(Symbol('b'))]
+    >>> loads("(a '(b))")
+    [Symbol('a'), Quoted([Symbol('b')])]
+
+    """
+    obj = parse(string)
+    assert len(obj) == 1  # FIXME: raise an appropriate error
+    return obj[0]
+
+
+def dump(obj, filelike):
+    """
+    Serialize `obj` as a S-expression formatted stream to `filelike`.
+    """
+    filelike.write(dump(obj))
+
+
+def dumps(obj):
     """
     Convert python object into s-expression.
 
-    >>> tosexp([Symbol('a'), Symbol('b')])
+    >>> dumps([Symbol('a'), Symbol('b')])
     '(a b)'
-    >>> tosexp(Symbol('a'))
+    >>> dumps(Symbol('a'))
     'a'
-    >>> tosexp([Symbol('a'), Quoted(Symbol('b'))])
+    >>> dumps([Symbol('a'), Quoted(Symbol('b'))])
     "(a 'b)"
-    >>> tosexp([Symbol('a'), Quoted([Symbol('b')])])
+    >>> dumps([Symbol('a'), Quoted([Symbol('b')])])
     "(a '(b))"
 
     """
+    return tosexp(obj)
+
+
+def tosexp(obj):
     if isinstance(obj, list):
         return Bracket(obj, '(').tosexp()
     elif isinstance(obj, (int, float)):
