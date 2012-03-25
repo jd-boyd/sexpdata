@@ -116,7 +116,7 @@ class Quoted(SExpBase):
 class Bracket(SExpBase):
 
     def __init__(self, val, bra):
-        assert bra in BRACKETS
+        assert bra in BRACKETS  # FIXME: raise an appropriate error
         super(Bracket, self).__init__(val)
         self._bra = bra
 
@@ -232,7 +232,7 @@ def gas(converter):
 
 @gas(lambda x: String(''.join(x)))
 def parse_str(laiter):
-    assert laiter.next() == '"'
+    assert laiter.next() == '"'  # never fail
     while True:
         c = laiter.next()
         if c == '"':
