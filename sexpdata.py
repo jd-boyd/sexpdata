@@ -33,14 +33,14 @@ def loads(string):
     return obj[0]
 
 
-def dump(obj, filelike):
+def dump(obj, filelike, **kwds):
     """
     Serialize `obj` as a S-expression formatted stream to `filelike`.
     """
     filelike.write(dump(obj))
 
 
-def dumps(obj):
+def dumps(obj, **kwds):
     """
     Convert python object into s-expression.
 
@@ -54,16 +54,23 @@ def dumps(obj):
     "(a '(b))"
 
     """
-    return tosexp(obj)
+    return tosexp(obj, **kwds)
 
 
-def tosexp(obj):
+def tosexp(obj, stras='symbol'):
     if isinstance(obj, list):
-        return Bracket(obj, '(').tosexp()
+        return Bracket(obj, '(').tosexp(stras=stras)
     elif isinstance(obj, (int, float)):
         return str(obj)
+    elif isinstance(obj, basestring):
+        if stras == 'symbol':
+            return obj
+        elif stras == 'string':
+            return String(obj).tosexp(stras=stras)
+        else:
+            raise ValueError("stras={0!r} is not valid".format(stras))
     elif isinstance(obj, SExpBase):
-        return obj.tosexp()
+        return obj.tosexp(stras=stras)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
@@ -84,13 +91,13 @@ class SExpBase(object):
         else:
             return False
 
-    def tosexp(self):
+    def tosexp(self, stras):
         raise NotImplementedError
 
 
 class Symbol(SExpBase):
 
-    def tosexp(self):
+    def tosexp(self, stras):
         return self._val
 
 
@@ -100,7 +107,7 @@ class String(SExpBase):
         '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
         '\n': '\\n', '\r': '\\r', '\t': '\\t'}
 
-    def tosexp(self):
+    def tosexp(self, stras):
         val = self._val
         for (s, q) in self._lisp_quoted_specials.iteritems():
             val = val.replace(s, q)
@@ -109,8 +116,8 @@ class String(SExpBase):
 
 class Quoted(SExpBase):
 
-    def tosexp(self):
-        return "'{0}".format(tosexp(self._val))
+    def tosexp(self, stras):
+        return "'{0}".format(tosexp(self._val, stras))
 
 
 class Bracket(SExpBase):
@@ -124,9 +131,11 @@ class Bracket(SExpBase):
         return "{0}({1!r}, {2!r})".format(
             self.__class__.__name__, self._val, self._bra)
 
-    def tosexp(self):
-        return "{0}{1}{2}".format(
-            self._bra, ' '.join(map(tosexp, self._val)), BRACKETS[self._bra])
+    def tosexp(self, stras):
+        bra = self._bra
+        ket = BRACKETS[self._bra]
+        c = ' '.join(tosexp(v, stras) for v in self._val)
+        return "{0}{1}{2}".format(bra, c, ket)
 
 
 def bracket(val, bra):

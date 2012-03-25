@@ -34,6 +34,19 @@ def test_identity():
         yield (check_identity, data)
 
 
+def test_tosexp_stras():
+    yield (eq_, tosexp('a'), 'a')
+    yield (eq_, tosexp(['a']), '(a)')
+    yield (eq_, tosexp('a', stras='string'), '"a"')
+    yield (eq_, tosexp(['a'], stras='string'), '("a")')
+    yield (eq_, tosexp(Quoted('a')), '\'a')
+    yield (eq_, tosexp(Quoted(['a'])), '\'(a)')
+    yield (eq_, tosexp([Quoted('a')]), '(\'a)')
+    yield (eq_, tosexp(Quoted('a'), stras='string'), '\'"a"')
+    yield (eq_, tosexp(Quoted(['a']), stras='string'), '\'("a")')
+    yield (eq_, tosexp([Quoted('a')], stras='string'), '(\'"a")')
+
+
 @raises(ExpectNothing)
 def test_too_many_brackets():
     parse("(a b))")
