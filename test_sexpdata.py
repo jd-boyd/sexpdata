@@ -1,4 +1,4 @@
-from sexpression import (
+from sexpdata import (
     ExpectClosingBracket, ExpectNothing, LookAheadIterator,
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
