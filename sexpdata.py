@@ -98,6 +98,9 @@ class SExpBase(object):
         else:
             return False
 
+    def value(self):
+        return self._val
+
     def tosexp(self, stras, tupleas):
         raise NotImplementedError
 
