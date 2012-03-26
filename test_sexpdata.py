@@ -47,6 +47,15 @@ def test_tosexp_stras():
     yield (eq_, tosexp([Quoted('a')], stras='string'), '(\'"a")')
 
 
+def test_tosexp_tupleas():
+    yield (eq_, tosexp(('a', 'b')), '(a b)')
+    yield (eq_, tosexp(('a', 'b'), tupleas='array'), '[a b]')
+    yield (eq_, tosexp([('a', 'b')]), '((a b))')
+    yield (eq_, tosexp([('a', 'b')], tupleas='array'), '([a b])')
+    yield (eq_, tosexp(Quoted(('a',))), '\'(a)')
+    yield (eq_, tosexp(Quoted(('a',)), tupleas='array'), '\'[a]')
+
+
 @raises(ExpectNothing)
 def test_too_many_brackets():
     parse("(a b))")
