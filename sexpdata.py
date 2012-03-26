@@ -57,20 +57,27 @@ def dumps(obj, **kwds):
     return tosexp(obj, **kwds)
 
 
-def tosexp(obj, stras='symbol'):
+def tosexp(obj, stras='symbol', tupleas='list'):
     if isinstance(obj, list):
-        return Bracket(obj, '(').tosexp(stras=stras)
+        return Bracket(obj, '(').tosexp(stras=stras, tupleas=tupleas)
+    elif isinstance(obj, tuple):
+        if tupleas == 'list':
+            return Bracket(obj, '(').tosexp(stras=stras, tupleas=tupleas)
+        elif tupleas == 'array':
+            return Bracket(obj, '[').tosexp(stras=stras, tupleas=tupleas)
+        else:
+            raise ValueError('tupleas={0!r} is not valid'.format(tupleas))
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, basestring):
         if stras == 'symbol':
             return obj
         elif stras == 'string':
-            return String(obj).tosexp(stras=stras)
+            return String(obj).tosexp(stras=stras, tupleas=tupleas)
         else:
             raise ValueError("stras={0!r} is not valid".format(stras))
     elif isinstance(obj, SExpBase):
-        return obj.tosexp(stras=stras)
+        return obj.tosexp(stras=stras, tupleas=tupleas)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
@@ -91,13 +98,13 @@ class SExpBase(object):
         else:
             return False
 
-    def tosexp(self, stras):
+    def tosexp(self, stras, tupleas):
         raise NotImplementedError
 
 
 class Symbol(SExpBase):
 
-    def tosexp(self, stras):
+    def tosexp(self, stras, tupleas):
         return self._val
 
 
@@ -107,7 +114,7 @@ class String(SExpBase):
         '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
         '\n': '\\n', '\r': '\\r', '\t': '\\t'}
 
-    def tosexp(self, stras):
+    def tosexp(self, stras, tupleas):
         val = self._val
         for (s, q) in self._lisp_quoted_specials.iteritems():
             val = val.replace(s, q)
@@ -116,8 +123,8 @@ class String(SExpBase):
 
 class Quoted(SExpBase):
 
-    def tosexp(self, stras):
-        return "'{0}".format(tosexp(self._val, stras))
+    def tosexp(self, stras, tupleas):
+        return "'{0}".format(tosexp(self._val, stras, tupleas))
 
 
 class Bracket(SExpBase):
@@ -131,10 +138,10 @@ class Bracket(SExpBase):
         return "{0}({1!r}, {2!r})".format(
             self.__class__.__name__, self._val, self._bra)
 
-    def tosexp(self, stras):
+    def tosexp(self, stras, tupleas):
         bra = self._bra
         ket = BRACKETS[self._bra]
-        c = ' '.join(tosexp(v, stras) for v in self._val)
+        c = ' '.join(tosexp(v, stras, tupleas) for v in self._val)
         return "{0}{1}{2}".format(bra, c, ket)
 
 
