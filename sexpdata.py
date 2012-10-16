@@ -119,13 +119,13 @@ class Symbol(SExpBase):
 
 class String(SExpBase):
 
-    _lisp_quoted_specials = {  # from Pymacs
-        '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
-        '\n': '\\n', '\r': '\\r', '\t': '\\t'}
+    _lisp_quoted_specials = [  # from Pymacs
+        ('"', '\\"'), ('\\', '\\\\'), ('\b', '\\b'), ('\f', '\\f'),
+        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
 
     def tosexp(self, stras, tupleas):
         val = self._val
-        for (s, q) in self._lisp_quoted_specials.iteritems():
+        for (s, q) in self._lisp_quoted_specials:
             val = val.replace(s, q)
         return '"{0}"'.format(val)
 
