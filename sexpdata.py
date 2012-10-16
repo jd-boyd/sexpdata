@@ -7,6 +7,12 @@ CBRACKETS = set(BRACKETS.values())
 ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
+try:
+    basestring
+except NameError:
+    basestring = str  # Python 3
+
+
 def load(filelike):
     """
     Load object from S-expression stored in `filelike`.
@@ -113,13 +119,13 @@ class Symbol(SExpBase):
 
 class String(SExpBase):
 
-    _lisp_quoted_specials = {  # from Pymacs
-        '"': '\\"', '\\': '\\\\', '\b': '\\b', '\f': '\\f',
-        '\n': '\\n', '\r': '\\r', '\t': '\\t'}
+    _lisp_quoted_specials = [  # from Pymacs
+        ('"', '\\"'), ('\\', '\\\\'), ('\b', '\\b'), ('\f', '\\f'),
+        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
 
     def tosexp(self, stras, tupleas):
         val = self._val
-        for (s, q) in self._lisp_quoted_specials.iteritems():
+        for (s, q) in self._lisp_quoted_specials:
             val = val.replace(s, q)
         return '"{0}"'.format(val)
 
@@ -183,8 +189,10 @@ class LookAheadIterator(Iterator):
             item = self._next_item
             del self._next_item
         else:
-            item = self._iter.next()
+            item = next(self._iter)
         return item
+
+    __next__ = next  # Python 3
 
     def has_next(self):
         try:
