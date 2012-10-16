@@ -16,6 +16,15 @@ except NameError:
 def load(filelike):
     """
     Load object from S-expression stored in `filelike`.
+
+    >>> import io
+    >>> fp = io.StringIO()
+    >>> sexp = [Symbol('a'), Symbol('b')]   # let's dump and load this object
+    >>> dump(sexp, fp)
+    >>> _ = fp.seek(0)
+    >>> load(fp) == sexp
+    True
+
     """
     return loads(filelike.read())
 
