@@ -8,9 +8,9 @@ ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
 try:
-    basestring
+    unicode
 except NameError:
-    basestring = str  # Python 3
+    basestring = unicode = str  # Python 3
 
 
 def load(filelike):
@@ -42,8 +42,15 @@ def loads(string):
 def dump(obj, filelike, **kwds):
     """
     Serialize `obj` as a S-expression formatted stream to `filelike`.
+
+    >>> import io
+    >>> fp = io.StringIO()
+    >>> dump([Symbol('a'), Symbol('b')], fp)
+    >>> print(fp.getvalue())
+    (a b)
+
     """
-    filelike.write(dump(obj))
+    filelike.write(unicode(dumps(obj)))
 
 
 def dumps(obj, **kwds):
