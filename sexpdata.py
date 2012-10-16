@@ -93,6 +93,11 @@ def dump(obj, filelike, **kwds):
     """
     Write `obj` as an S-expression into given stream `filelike`.
 
+    :arg       obj: A Python object.
+    :arg  filelike: A text stream object.
+
+    See :func:`dumps` for valid keyword arguments.
+
     >>> import io
     >>> fp = io.StringIO()
     >>> dump([Symbol('a'), Symbol('b')], fp)
@@ -106,6 +111,14 @@ def dump(obj, filelike, **kwds):
 def dumps(obj, **kwds):
     """
     Convert python object into an S-expression.
+
+    :arg           obj: A Python object.
+    :keyword    str_as: How string should be interpreted.
+                        Default is ``'symbol'``.
+    :type       str_as: ``'symbol'`` or ``'string'``
+    :keyword  tuple_as: How tuple should be interpreted.
+                        Default is ``'list'``.
+    :type     tuple_as: ``'list'`` or ``'array'``
 
     >>> dumps([Symbol('a'), Symbol('b')])
     '(a b)'
