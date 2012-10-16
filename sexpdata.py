@@ -38,7 +38,7 @@ Links:
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = '0.0.1.dev0'
+__version__ = '0.0.1.dev1'
 __author__ = 'Takafumi Arakaki'
 __license__ = 'BSD License'
 __all__ = [
