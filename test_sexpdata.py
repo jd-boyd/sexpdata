@@ -47,13 +47,13 @@ def test_tosexp_stras():
     yield (eq_, tosexp([Quoted('a')], stras='string'), '(\'"a")')
 
 
-def test_tosexp_tupleas():
+def test_tosexp_tuple_as():
     yield (eq_, tosexp(('a', 'b')), '(a b)')
-    yield (eq_, tosexp(('a', 'b'), tupleas='array'), '[a b]')
+    yield (eq_, tosexp(('a', 'b'), tuple_as='array'), '[a b]')
     yield (eq_, tosexp([('a', 'b')]), '((a b))')
-    yield (eq_, tosexp([('a', 'b')], tupleas='array'), '([a b])')
+    yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '([a b])')
     yield (eq_, tosexp(Quoted(('a',))), '\'(a)')
-    yield (eq_, tosexp(Quoted(('a',)), tupleas='array'), '\'[a]')
+    yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'[a]')
 
 
 @raises(ExpectNothing)
