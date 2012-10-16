@@ -1,11 +1,11 @@
 S-expression parser for Python
 ==============================
 
->>> import sexpdata
->>> sexpdata.loads("(a b)")
+>>> from sexpdata import loads, dumps
+>>> loads("(a b)")
 [Symbol('a'), Symbol('b')]
->>> sexpdata.dumps([Symbol('a'), Symbol('b')])
-'(a b)'
+>>> print(dumps(['a', 'b']))
+(a b)
 
 Links:
 
