@@ -3,11 +3,21 @@
 S-expression parser for Python
 ==============================
 
+`sexpdata` is a simple S-expression parser/serializer.  It has a
+simple `load` and `dump` functions like `pickle`, `json` or `PyYAML`
+module.
+
 >>> from sexpdata import loads, dumps
 >>> loads("(a b)")
 [Symbol('a'), Symbol('b')]
 >>> print(dumps(['a', 'b']))
 (a b)
+
+
+You can install `sexpdata` from PyPI_::
+
+  pip install sexpdata
+
 
 Links:
 
