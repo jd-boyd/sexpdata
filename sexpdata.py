@@ -1,6 +1,13 @@
+# [[[cog import cog; cog.outl('"""\n%s\n"""' % file('README.rst').read()) ]]]
 """
 S-expression parser for Python
 ==============================
+
+>>> import sexpdata
+>>> sexpdata.loads("(a b)")
+[Symbol('a'), Symbol('b')]
+>>> sexpdata.dumps([Symbol('a'), Symbol('b')])
+'(a b)'
 
 Links:
 
@@ -11,6 +18,7 @@ Links:
 * `Travis CI <https://travis-ci.org/#!/tkf/sexpdata>`_
 
 """
+# [[[end]]]
 
 # Copyright (c) 2012 Takafumi Arakaki
 # All rights reserved.
