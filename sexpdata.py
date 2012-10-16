@@ -7,6 +7,12 @@ CBRACKETS = set(BRACKETS.values())
 ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
+try:
+    basestring
+except NameError:
+    basestring = str  # Python 3
+
+
 def load(filelike):
     """
     Load object from S-expression stored in `filelike`.
