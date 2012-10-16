@@ -50,7 +50,7 @@ def loads(string):
 
 def dump(obj, filelike, **kwds):
     """
-    Serialize `obj` as a S-expression formatted stream to `filelike`.
+    Write `obj` as an S-expression into given stream `filelike`.
 
     >>> import io
     >>> fp = io.StringIO()
@@ -64,7 +64,7 @@ def dump(obj, filelike, **kwds):
 
 def dumps(obj, **kwds):
     """
-    Convert python object into s-expression.
+    Convert python object into an S-expression.
 
     >>> dumps([Symbol('a'), Symbol('b')])
     '(a b)'
