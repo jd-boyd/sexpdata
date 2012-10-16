@@ -34,17 +34,17 @@ def test_identity():
         yield (check_identity, data)
 
 
-def test_tosexp_stras():
+def test_tosexp_str_as():
     yield (eq_, tosexp('a'), 'a')
     yield (eq_, tosexp(['a']), '(a)')
-    yield (eq_, tosexp('a', stras='string'), '"a"')
-    yield (eq_, tosexp(['a'], stras='string'), '("a")')
+    yield (eq_, tosexp('a', str_as='string'), '"a"')
+    yield (eq_, tosexp(['a'], str_as='string'), '("a")')
     yield (eq_, tosexp(Quoted('a')), '\'a')
     yield (eq_, tosexp(Quoted(['a'])), '\'(a)')
     yield (eq_, tosexp([Quoted('a')]), '(\'a)')
-    yield (eq_, tosexp(Quoted('a'), stras='string'), '\'"a"')
-    yield (eq_, tosexp(Quoted(['a']), stras='string'), '\'("a")')
-    yield (eq_, tosexp([Quoted('a')], stras='string'), '(\'"a")')
+    yield (eq_, tosexp(Quoted('a'), str_as='string'), '\'"a"')
+    yield (eq_, tosexp(Quoted(['a']), str_as='string'), '\'("a")')
+    yield (eq_, tosexp([Quoted('a')], str_as='string'), '(\'"a")')
 
 
 def test_tosexp_tuple_as():
