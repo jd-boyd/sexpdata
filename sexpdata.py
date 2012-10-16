@@ -183,8 +183,10 @@ class LookAheadIterator(Iterator):
             item = self._next_item
             del self._next_item
         else:
-            item = self._iter.next()
+            item = next(self._iter)
         return item
+
+    __next__ = next  # Python 3
 
     def has_next(self):
         try:
