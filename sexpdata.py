@@ -161,13 +161,14 @@ def dumps(obj, **kwds):
 
 
 def tosexp(obj, str_as='string', tuple_as='list'):
+    _tosexp = lambda x: tosexp(x, str_as=str_as, tuple_as=tuple_as)
     if isinstance(obj, list):
-        return Bracket(obj, '(').tosexp(str_as=str_as, tuple_as=tuple_as)
+        return Bracket(obj, '(').tosexp(_tosexp)
     elif isinstance(obj, tuple):
         if tuple_as == 'list':
-            return Bracket(obj, '(').tosexp(str_as=str_as, tuple_as=tuple_as)
+            return Bracket(obj, '(').tosexp(_tosexp)
         elif tuple_as == 'array':
-            return Bracket(obj, '[').tosexp(str_as=str_as, tuple_as=tuple_as)
+            return Bracket(obj, '[').tosexp(_tosexp)
         else:
             raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
     elif isinstance(obj, (int, float)):
@@ -176,11 +177,11 @@ def tosexp(obj, str_as='string', tuple_as='list'):
         if str_as == 'symbol':
             return obj
         elif str_as == 'string':
-            return String(obj).tosexp(str_as=str_as, tuple_as=tuple_as)
+            return String(obj).tosexp()
         else:
             raise ValueError("str_as={0!r} is not valid".format(str_as))
     elif isinstance(obj, SExpBase):
-        return obj.tosexp(str_as=str_as, tuple_as=tuple_as)
+        return obj.tosexp(_tosexp)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
@@ -204,13 +205,19 @@ class SExpBase(object):
     def value(self):
         return self._val
 
-    def tosexp(self, str_as, tuple_as):
+    def tosexp(self, tosexp=tosexp):
+        """
+        Decode this object into an S-expression string.
+
+        :arg tosexp: A function to be used when converting sub S-expression.
+
+        """
         raise NotImplementedError
 
 
 class Symbol(SExpBase):
 
-    def tosexp(self, str_as, tuple_as):
+    def tosexp(self, tosexp=None):
         return self._val
 
 
@@ -220,7 +227,7 @@ class String(SExpBase):
         ('"', '\\"'), ('\\', '\\\\'), ('\b', '\\b'), ('\f', '\\f'),
         ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
 
-    def tosexp(self, str_as, tuple_as):
+    def tosexp(self, tosexp=None):
         val = self._val
         for (s, q) in self._lisp_quoted_specials:
             val = val.replace(s, q)
@@ -229,8 +236,8 @@ class String(SExpBase):
 
 class Quoted(SExpBase):
 
-    def tosexp(self, str_as, tuple_as):
-        return "'{0}".format(tosexp(self._val, str_as, tuple_as))
+    def tosexp(self, tosexp=tosexp):
+        return "'{0}".format(tosexp(self._val))
 
 
 class Bracket(SExpBase):
@@ -244,10 +251,10 @@ class Bracket(SExpBase):
         return "{0}({1!r}, {2!r})".format(
             self.__class__.__name__, self._val, self._bra)
 
-    def tosexp(self, str_as, tuple_as):
+    def tosexp(self, tosexp=tosexp):
         bra = self._bra
         ket = BRACKETS[self._bra]
-        c = ' '.join(tosexp(v, str_as, tuple_as) for v in self._val)
+        c = ' '.join(tosexp(v) for v in self._val)
         return "{0}{1}{2}".format(bra, c, ket)
 
 
