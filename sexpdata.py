@@ -147,6 +147,16 @@ def dumps(obj, **kwds):
                         Default is ``'list'``.
     :type     tuple_as: ``'list'`` or ``'array'``
 
+
+    Basic usage:
+
+    >>> dumps(['a', 'b'])
+    '("a" "b")'
+    >>> dumps(['a', 'b'], str_as='symbol')
+    '(a b)'
+
+    More verbose usage:
+
     >>> dumps([Symbol('a'), Symbol('b')])
     '(a b)'
     >>> dumps(Symbol('a'))
