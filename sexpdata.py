@@ -203,6 +203,8 @@ def dumps(obj, **kwds):
     '("a" "b")'
     >>> dumps(['a', 'b'], str_as='symbol')
     '(a b)'
+    >>> dumps(dict(a=1, b=2))
+    '(:a 1 :b 2)'
 
     More verbose usage:
 
@@ -241,12 +243,21 @@ def tosexp(obj, str_as='string', tuple_as='list'):
             return String(obj).tosexp()
         else:
             raise ValueError("str_as={0!r} is not valid".format(str_as))
+    elif isinstance(obj, dict):
+        return _tosexp(dict_to_plist(obj))
     elif isinstance(obj, SExpBase):
         return obj.tosexp(_tosexp)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
             "It's value is '{1!r}'".format(type(obj), obj))
+
+
+@gas(list)
+def dict_to_plist(obj):
+    for key in obj:
+        yield Symbol(':{0}'.format(key))
+        yield obj[key]
 
 
 class SExpBase(object):
