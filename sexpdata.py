@@ -81,6 +81,55 @@ except NameError:
     basestring = unicode = str  # Python 3
 
 
+### Utility
+
+def gas(converter):
+    """
+    Decorator to convert iterator to a function.
+
+    It is just a function composition. The following two codes are
+    equivalent.
+
+    Using `@gas`::
+
+        @gas(converter)
+        def generator(args):
+            ...
+
+        result = generator(args)
+
+    Manually do the same::
+
+        def generator(args):
+            ...
+
+        result = converter(generator(args))
+
+    Although this decorator can be used for composition of any kind of
+    functions, it must be used only for generators as the name
+    suggests (gas = Generator AS).
+
+    Example:
+
+    >>> @gas(list)
+    ... def f():
+    ...     for i in range(3):
+    ...         yield i
+    ...
+    >>> f()  # this gives a list, not an iterator
+    [0, 1, 2]
+
+    """
+    def wrapper(generator):
+        @functools.wraps(generator)
+        def func(*args, **kwds):
+            return converter(generator(*args, **kwds))
+        return func
+    return wrapper
+
+
+### Interface
+
 def load(filelike):
     """
     Load object from S-expression stored in `filelike`.
@@ -169,6 +218,8 @@ def dumps(obj, **kwds):
     """
     return tosexp(obj, **kwds)
 
+
+### Core
 
 def tosexp(obj, str_as='string', tuple_as='list'):
     _tosexp = lambda x: tosexp(x, str_as=str_as, tuple_as=tuple_as)
@@ -324,51 +375,6 @@ class LookAheadIterator(Iterator):
             return self.lookahead()
         else:
             return default
-
-
-def gas(converter):
-    """
-    Decorator to convert iterator to a function.
-
-    It is just a function composition. The following two codes are
-    equivalent.
-
-    Using `@gas`::
-
-        @gas(converter)
-        def generator(args):
-            ...
-
-        result = generator(args)
-
-    Manually do the same::
-
-        def generator(args):
-            ...
-
-        result = converter(generator(args))
-
-    Although this decorator can be used for composition of any kind of
-    functions, it must be used only for generators as the name
-    suggests (gas = Generator AS).
-
-    Example:
-
-    >>> @gas(list)
-    ... def f():
-    ...     for i in range(3):
-    ...         yield i
-    ...
-    >>> f()  # this gives a list, not an iterator
-    [0, 1, 2]
-
-    """
-    def wrapper(generator):
-        @functools.wraps(generator)
-        def func(*args, **kwds):
-            return converter(generator(*args, **kwds))
-        return func
-    return wrapper
 
 
 @gas(lambda x: String(''.join(x)))
