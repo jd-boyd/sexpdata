@@ -83,16 +83,16 @@ except NameError:
 
 ### Utility
 
-def gas(converter):
+def return_as(converter):
     """
-    Decorator to convert iterator to a function.
+    Decorator to convert result of a function.
 
     It is just a function composition. The following two codes are
     equivalent.
 
-    Using `@gas`::
+    Using `@return_as`::
 
-        @gas(converter)
+        @return_as(converter)
         def generator(args):
             ...
 
@@ -105,13 +105,9 @@ def gas(converter):
 
         result = converter(generator(args))
 
-    Although this decorator can be used for composition of any kind of
-    functions, it must be used only for generators as the name
-    suggests (gas = Generator AS).
-
     Example:
 
-    >>> @gas(list)
+    >>> @return_as(list)
     ... def f():
     ...     for i in range(3):
     ...         yield i
@@ -253,7 +249,7 @@ def tosexp(obj, str_as='string', tuple_as='list'):
             "It's value is '{1!r}'".format(type(obj), obj))
 
 
-@gas(list)
+@return_as(list)
 def dict_to_plist(obj):
     for key in obj:
         yield Symbol(':{0}'.format(key))
@@ -388,7 +384,7 @@ class LookAheadIterator(Iterator):
             return default
 
 
-@gas(lambda x: String(''.join(x)))
+@return_as(lambda x: String(''.join(x)))
 def parse_str(laiter):
     assert laiter.next() == '"'  # never fail
     while True:
@@ -402,7 +398,7 @@ def parse_str(laiter):
             yield c
 
 
-@gas(lambda x: atom(''.join(x)))
+@return_as(lambda x: atom(''.join(x)))
 def parse_atom(laiter):
     while laiter.has_next():
         if laiter.lookahead() in ATOM_END:
@@ -420,7 +416,7 @@ def atom(token):
             return Symbol(token)
 
 
-@gas(list)
+@return_as(list)
 def parse_sexp(laiter):
     while laiter.has_next():
         c = laiter.lookahead()
