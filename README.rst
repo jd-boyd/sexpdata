@@ -9,7 +9,7 @@ module.
 >>> loads("(a b)")
 [Symbol('a'), Symbol('b')]
 >>> print(dumps(['a', 'b']))
-(a b)
+("a" "b")
 
 
 You can install `sexpdata` from PyPI_::

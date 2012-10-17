@@ -35,25 +35,25 @@ def test_identity():
 
 
 def test_tosexp_str_as():
-    yield (eq_, tosexp('a'), 'a')
-    yield (eq_, tosexp(['a']), '(a)')
-    yield (eq_, tosexp('a', str_as='string'), '"a"')
-    yield (eq_, tosexp(['a'], str_as='string'), '("a")')
-    yield (eq_, tosexp(Quoted('a')), '\'a')
-    yield (eq_, tosexp(Quoted(['a'])), '\'(a)')
-    yield (eq_, tosexp([Quoted('a')]), '(\'a)')
-    yield (eq_, tosexp(Quoted('a'), str_as='string'), '\'"a"')
-    yield (eq_, tosexp(Quoted(['a']), str_as='string'), '\'("a")')
-    yield (eq_, tosexp([Quoted('a')], str_as='string'), '(\'"a")')
+    yield (eq_, tosexp('a', str_as='symbol'), 'a')
+    yield (eq_, tosexp(['a'], str_as='symbol'), '(a)')
+    yield (eq_, tosexp('a'), '"a"')
+    yield (eq_, tosexp(['a']), '("a")')
+    yield (eq_, tosexp(Quoted('a')), '\'"a"')
+    yield (eq_, tosexp(Quoted(['a']), str_as='symbol'), '\'(a)')
+    yield (eq_, tosexp([Quoted('a')], str_as='symbol'), '(\'a)')
+    yield (eq_, tosexp(Quoted('a'), str_as='symbol'), '\'a')
+    yield (eq_, tosexp(Quoted(['a'])), '\'("a")')
+    yield (eq_, tosexp([Quoted('a')]), '(\'"a")')
 
 
 def test_tosexp_tuple_as():
-    yield (eq_, tosexp(('a', 'b')), '(a b)')
-    yield (eq_, tosexp(('a', 'b'), tuple_as='array'), '[a b]')
-    yield (eq_, tosexp([('a', 'b')]), '((a b))')
-    yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '([a b])')
-    yield (eq_, tosexp(Quoted(('a',))), '\'(a)')
-    yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'[a]')
+    yield (eq_, tosexp(('a', 'b')), '("a" "b")')
+    yield (eq_, tosexp(('a', 'b'), tuple_as='array'), '["a" "b"]')
+    yield (eq_, tosexp([('a', 'b')]), '(("a" "b"))')
+    yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '(["a" "b"])')
+    yield (eq_, tosexp(Quoted(('a',))), '\'("a")')
+    yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'["a"]')
 
 
 @raises(ExpectNothing)

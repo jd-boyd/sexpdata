@@ -11,7 +11,7 @@ module.
 >>> loads("(a b)")
 [Symbol('a'), Symbol('b')]
 >>> print(dumps(['a', 'b']))
-(a b)
+("a" "b")
 
 
 You can install `sexpdata` from PyPI_::
@@ -141,7 +141,7 @@ def dumps(obj, **kwds):
 
     :arg           obj: A Python object.
     :keyword    str_as: How string should be interpreted.
-                        Default is ``'symbol'``.
+                        Default is ``'string'``.
     :type       str_as: ``'symbol'`` or ``'string'``
     :keyword  tuple_as: How tuple should be interpreted.
                         Default is ``'list'``.
@@ -160,7 +160,7 @@ def dumps(obj, **kwds):
     return tosexp(obj, **kwds)
 
 
-def tosexp(obj, str_as='symbol', tuple_as='list'):
+def tosexp(obj, str_as='string', tuple_as='list'):
     if isinstance(obj, list):
         return Bracket(obj, '(').tosexp(str_as=str_as, tuple_as=tuple_as)
     elif isinstance(obj, tuple):
