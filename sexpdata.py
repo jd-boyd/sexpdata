@@ -62,6 +62,8 @@ __license__ = 'BSD License'
 __all__ = [
     # API functions:
     'load', 'loads', 'dump', 'dumps',
+    # Utility functions:
+    'car', 'cdr',
     # S-expression classes:
     'Symbol', 'String', 'Quoted',
 ]
@@ -263,6 +265,44 @@ def dumps(obj, **kwds):
 
     """
     return tosexp(obj, **kwds)
+
+
+def car(obj):
+    """
+    Alias of ``obj[0]``.
+
+    >>> car(loads('(a . b)'))
+    Symbol('a')
+    >>> car(loads('(a b)'))
+    Symbol('a')
+
+    """
+    return obj[0]
+
+
+def cdr(obj):
+    """
+    `cdr`-like function.
+
+    >>> cdr(loads('(a . b)'))
+    Symbol('b')
+    >>> cdr(loads('(a b)'))
+    [Symbol('b')]
+    >>> cdr(loads('(a . (b))'))
+    [Symbol('b')]
+    >>> cdr(loads('(a)'))
+    []
+    >>> cdr(loads('(a . nil)'))
+    []
+
+    """
+    # This is very lazy implementation.  Probably the best way to do
+    # it is to define `Cons` S-expression class.
+    if len(obj) > 2:
+        dot = obj[1]
+        if isinstance(dot, Symbol) and dot.value() == '.':
+            return obj[2]
+    return obj[1:]
 
 
 ### Core
