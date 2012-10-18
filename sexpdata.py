@@ -245,6 +245,10 @@ def dumps(obj, **kwds):
     '(a b)'
     >>> dumps(dict(a=1, b=2))
     '(:a 1 :b 2)'
+    >>> dumps(('a', 'b'))
+    '("a" "b")'
+    >>> dumps(('a', 'b'), tuple_as='array')
+    '["a" "b"]'
 
     More verbose usage:
 
