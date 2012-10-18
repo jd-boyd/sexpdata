@@ -478,7 +478,7 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
-    def __init__(self, string_to=String, nil='nil', true='t', false=None):
+    def __init__(self, string_to=None, nil='nil', true='t', false=None):
         self.nil = nil
         self.true = true
         self.false = false

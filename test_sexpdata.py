@@ -1,18 +1,18 @@
 from sexpdata import (
     ExpectClosingBracket, ExpectNothing, LookAheadIterator,
-    parse, tosexp, Symbol, String, Quoted, bracket,
+    parse, tosexp, Symbol, Quoted, bracket,
 )
 from nose.tools import eq_, raises
 
 data_identity = [
     Symbol('a'),
-    String('a'),
+    'a',
     [Symbol('a')],
-    [String('a')],
+    ['a'],
     Quoted(Symbol('a')),
-    Quoted(String('a')),
+    Quoted('a'),
     Quoted([Symbol('a')]),
-    Quoted([String('a')]),
+    Quoted(['a']),
     [Symbol('a'), Symbol('b')],
     [Symbol('a'), [Symbol('b')]],
     [Symbol('a'), Quoted([Symbol('b')])],
