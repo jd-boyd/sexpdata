@@ -478,13 +478,14 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
-    def __init__(self, nil='nil', true='t', false=None):
+    def __init__(self, string_to=String, nil='nil', true='t', false=None):
         self.nil = nil
         self.true = true
         self.false = false
+        self.string_to = (lambda x: x) if string_to is None else string_to
 
     @staticmethod
-    @return_as(lambda x: String(''.join(x)))
+    @return_as(lambda x: ''.join(x))
     def parse_str(laiter):
         assert laiter.next() == '"'  # never fail
         while True:
@@ -526,7 +527,7 @@ class Parser(object):
         while laiter.has_next():
             c = laiter.lookahead()
             if c == '"':
-                yield self.parse_str(laiter)
+                yield self.string_to(self.parse_str(laiter))
             elif c in whitespace:
                 laiter.next()
                 continue
