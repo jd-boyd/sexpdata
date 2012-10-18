@@ -153,6 +153,11 @@ def loads(string):
     >>> loads("(a '(b))")
     [Symbol('a'), Quoted([Symbol('b')])]
 
+    ``nil`` is converted to an empty list:
+
+    >>> loads("nil")
+    []
+
     """
     obj = parse(string)
     assert len(obj) == 1  # FIXME: raise an appropriate error
