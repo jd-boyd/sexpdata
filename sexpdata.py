@@ -149,10 +149,10 @@ def loads(string, **kwds):
     Load object from S-expression `string`.
 
     :arg        string: String containing an S-expression.
-    :type          nil: str
+    :type          nil: str or None
     :keyword       nil: A symbol interpreted as an empty list.
                         Default is ``'nil'``.
-    :type         true: str
+    :type         true: str or None
     :keyword      true: A symbol interpreted as True.
                         Default is ``'t'``.
 
@@ -165,19 +165,26 @@ def loads(string, **kwds):
     >>> loads("(a '(b))")
     [Symbol('a'), Quoted([Symbol('b')])]
 
-    ``nil`` is converted to an empty list:
+    ``nil`` is converted to an empty list by default.  You can use
+    keyword argument `nil` to change what symbol must be interpreted
+    as nil:
 
     >>> loads("nil")
     []
     >>> loads("null", nil='null')
     []
+    >>> loads("nil", nil=None)
+    Symbol('nil')
 
-    ``t`` is converted to True:
+    ``t`` is converted to True by default.  You can use keyword
+    argument `true` to change what symbol must be converted to True.:
 
     >>> loads("t")
     True
     >>> loads("#t", true='#t')
     True
+    >>> loads("t", true=None)
+    Symbol('t')
 
     """
     obj = parse(string, **kwds)
