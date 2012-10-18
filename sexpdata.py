@@ -155,6 +155,9 @@ def loads(string, **kwds):
     :type         true: str or None
     :keyword      true: A symbol interpreted as True.
                         Default is ``'t'``.
+    :type        false: str or None
+    :keyword     false: A symbol interpreted as False.
+                        Default is ``None``.
 
     >>> loads("(a b)")
     [Symbol('a'), Symbol('b')]
@@ -185,6 +188,16 @@ def loads(string, **kwds):
     True
     >>> loads("t", true=None)
     Symbol('t')
+
+    No symbol is converted to False by default.  You can use keyword
+    argument `false` to convert a symbol to False.
+
+    >>> loads("#f")
+    Symbol('#f')
+    >>> loads("#f", false='#f')
+    False
+    >>> loads("nil", false='nil', nil=None)
+    False
 
     """
     obj = parse(string, **kwds)
@@ -421,9 +434,10 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
-    def __init__(self, nil='nil', true='t'):
+    def __init__(self, nil='nil', true='t', false=None):
         self.nil = nil
         self.true = true
+        self.false = false
 
     @staticmethod
     @return_as(lambda x: String(''.join(x)))
@@ -453,6 +467,8 @@ class Parser(object):
             return []
         if token == self.true:
             return True
+        if token == self.false:
+            return False
         try:
             return int(token)
         except ValueError:
