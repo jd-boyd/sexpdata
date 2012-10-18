@@ -124,9 +124,13 @@ def return_as(converter):
 
 ### Interface
 
-def load(filelike):
+def load(filelike, **kwds):
     """
     Load object from S-expression stored in `filelike`.
+
+    :arg  filelike: A text stream object.
+
+    See :func:`loads` for valid keyword arguments.
 
     >>> import io
     >>> fp = io.StringIO()
@@ -137,12 +141,20 @@ def load(filelike):
     True
 
     """
-    return loads(filelike.read())
+    return loads(filelike.read(), **kwds)
 
 
-def loads(string):
+def loads(string, **kwds):
     """
     Load object from S-expression `string`.
+
+    :arg        string: String containing an S-expression.
+    :type          nil: str
+    :keyword       nil: A symbol interpreted as an empty list.
+                        Default is ``'nil'``.
+    :type         true: str
+    :keyword      true: A symbol interpreted as True.
+                        Default is ``'t'``.
 
     >>> loads("(a b)")
     [Symbol('a'), Symbol('b')]
@@ -157,14 +169,18 @@ def loads(string):
 
     >>> loads("nil")
     []
+    >>> loads("null", nil='null')
+    []
 
     ``t`` is converted to True:
 
     >>> loads("t")
     True
+    >>> loads("#t", true='#t')
+    True
 
     """
-    obj = parse(string)
+    obj = parse(string, **kwds)
     assert len(obj) == 1  # FIXME: raise an appropriate error
     return obj[0]
 
@@ -466,7 +482,7 @@ class Parser(object):
                 yield self.parse_atom(laiter)
 
 
-def parse(iterable):
+def parse(iterable, **kwds):
     """
     Parse s-expression.
 
@@ -481,7 +497,7 @@ def parse(iterable):
 
     """
     laiter = LookAheadIterator(iterable)
-    sexp = Parser().parse_sexp(laiter)
+    sexp = Parser(**kwds).parse_sexp(laiter)
     if laiter.has_next():
         raise ExpectNothing(laiter.lookahead())
     return sexp
