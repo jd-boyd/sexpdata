@@ -71,8 +71,6 @@ from collections import Iterator
 import functools
 
 BRACKETS = {'(': ')', '[': ']'}
-CBRACKETS = set(BRACKETS.values())
-ATOM_END = set(BRACKETS) | set(CBRACKETS) | set('"\'') | set(whitespace)
 
 
 try:
@@ -386,6 +384,10 @@ class LookAheadIterator(Iterator):
 
 class Parser(object):
 
+    closing_brackets = set(BRACKETS.values())
+    atom_end = \
+        set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
+
     @staticmethod
     @return_as(lambda x: String(''.join(x)))
     def parse_str(laiter):
@@ -405,7 +407,7 @@ class Parser(object):
 
     def _parse_atom(self, laiter):
         while laiter.has_next():
-            if laiter.lookahead() in ATOM_END:
+            if laiter.lookahead() in self.atom_end:
                 break
             yield laiter.next()
 
@@ -434,7 +436,7 @@ class Parser(object):
                 if laiter.lookahead_safe() != close:
                     raise ExpectClosingBracket(laiter.lookahead_safe(), close)
                 laiter.next()
-            elif c in CBRACKETS:
+            elif c in self.closing_brackets:
                 break
             elif c == "'":
                 laiter.next()
