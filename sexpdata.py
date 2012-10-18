@@ -8,8 +8,8 @@ simple `load` and `dump` functions like `pickle`, `json` or `PyYAML`
 module.
 
 >>> from sexpdata import loads, dumps
->>> loads("(a b)")
-[Symbol('a'), Symbol('b')]
+>>> loads('("a" "b")')
+['a', 'b']
 >>> print(dumps(['a', 'b']))
 ("a" "b")
 
