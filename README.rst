@@ -1,7 +1,7 @@
 S-expression parser for Python
 ==============================
 
-`sexpdata` is a simple S-expression parser/serializer.  It has a
+`sexpdata` is a simple S-expression parser/serializer.  It has
 simple `load` and `dump` functions like `pickle`, `json` or `PyYAML`
 module.
 
