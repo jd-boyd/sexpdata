@@ -158,6 +158,11 @@ def loads(string):
     >>> loads("nil")
     []
 
+    ``t`` is converted to True:
+
+    >>> loads("t")
+    True
+
     """
     obj = parse(string)
     assert len(obj) == 1  # FIXME: raise an appropriate error
@@ -393,8 +398,9 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
-    def __init__(self, nil='nil'):
+    def __init__(self, nil='nil', true='t'):
         self.nil = nil
+        self.true = true
 
     @staticmethod
     @return_as(lambda x: String(''.join(x)))
@@ -422,6 +428,8 @@ class Parser(object):
     def atom(self, token):
         if token == self.nil:
             return []
+        if token == self.true:
+            return True
         try:
             return int(token)
         except ValueError:
