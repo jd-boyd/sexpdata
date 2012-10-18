@@ -388,6 +388,9 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
+    def __init__(self, nil='nil'):
+        self.nil = nil
+
     @staticmethod
     @return_as(lambda x: String(''.join(x)))
     def parse_str(laiter):
@@ -412,6 +415,8 @@ class Parser(object):
             yield laiter.next()
 
     def atom(self, token):
+        if token == self.nil:
+            return []
         try:
             return int(token)
         except ValueError:
