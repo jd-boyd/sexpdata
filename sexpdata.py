@@ -384,64 +384,66 @@ class LookAheadIterator(Iterator):
             return default
 
 
-@return_as(lambda x: String(''.join(x)))
-def parse_str(laiter):
-    assert laiter.next() == '"'  # never fail
-    while True:
-        c = laiter.next()
-        if c == '"':
-            return
-        elif c == '\\':
-            yield c
+class Parser(object):
+
+    @staticmethod
+    @return_as(lambda x: String(''.join(x)))
+    def parse_str(laiter):
+        assert laiter.next() == '"'  # never fail
+        while True:
+            c = laiter.next()
+            if c == '"':
+                return
+            elif c == '\\':
+                yield c
+                yield laiter.next()
+            else:
+                yield c
+
+    def parse_atom(self, laiter):
+        return self.atom(''.join(self._parse_atom(laiter)))
+
+    def _parse_atom(self, laiter):
+        while laiter.has_next():
+            if laiter.lookahead() in ATOM_END:
+                break
             yield laiter.next()
-        else:
-            yield c
 
-
-@return_as(lambda x: atom(''.join(x)))
-def parse_atom(laiter):
-    while laiter.has_next():
-        if laiter.lookahead() in ATOM_END:
-            break
-        yield laiter.next()
-
-
-def atom(token):
-    try:
-        return int(token)
-    except ValueError:
+    def atom(self, token):
         try:
-            return float(token)
+            return int(token)
         except ValueError:
-            return Symbol(token)
+            try:
+                return float(token)
+            except ValueError:
+                return Symbol(token)
 
-
-@return_as(list)
-def parse_sexp(laiter):
-    while laiter.has_next():
-        c = laiter.lookahead()
-        if c == '"':
-            yield parse_str(laiter)
-        elif c in whitespace:
-            laiter.next()
-            continue
-        elif c in BRACKETS:
-            close = BRACKETS[c]
-            laiter.next()
-            yield bracket(parse_sexp(laiter), c)
-            if laiter.lookahead_safe() != close:
-                raise ExpectClosingBracket(laiter.lookahead_safe(), close)
-            laiter.next()
-        elif c in CBRACKETS:
-            break
-        elif c == "'":
-            laiter.next()
-            subsexp = parse_sexp(laiter)
-            yield Quoted(subsexp[0])
-            for sexp in subsexp[1:]:
-                yield sexp
-        else:
-            yield parse_atom(laiter)
+    @return_as(list)
+    def parse_sexp(self, laiter):
+        while laiter.has_next():
+            c = laiter.lookahead()
+            if c == '"':
+                yield self.parse_str(laiter)
+            elif c in whitespace:
+                laiter.next()
+                continue
+            elif c in BRACKETS:
+                close = BRACKETS[c]
+                laiter.next()
+                yield bracket(self.parse_sexp(laiter), c)
+                if laiter.lookahead_safe() != close:
+                    raise ExpectClosingBracket(laiter.lookahead_safe(), close)
+                laiter.next()
+            elif c in CBRACKETS:
+                break
+            elif c == "'":
+                laiter.next()
+                subsexp = self.parse_sexp(laiter)
+                yield Quoted(subsexp[0])
+                for sexp in subsexp[1:]:
+                    yield sexp
+            else:
+                yield self.parse_atom(laiter)
 
 
 def parse(iterable):
@@ -459,7 +461,7 @@ def parse(iterable):
 
     """
     laiter = LookAheadIterator(iterable)
-    sexp = parse_sexp(laiter)
+    sexp = Parser().parse_sexp(laiter)
     if laiter.has_next():
         raise ExpectNothing(laiter.lookahead())
     return sexp
