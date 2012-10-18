@@ -229,12 +229,12 @@ def dumps(obj, **kwds):
     Convert python object into an S-expression.
 
     :arg           obj: A Python object.
+    :type       str_as: ``'symbol'`` or ``'string'``
     :keyword    str_as: How string should be interpreted.
                         Default is ``'string'``.
-    :type       str_as: ``'symbol'`` or ``'string'``
+    :type     tuple_as: ``'list'`` or ``'array'``
     :keyword  tuple_as: How tuple should be interpreted.
                         Default is ``'list'``.
-    :type     tuple_as: ``'list'`` or ``'array'``
 
 
     Basic usage:
