@@ -384,11 +384,17 @@ class String(SExpBase):
         ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
         ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
 
+    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
+
     def tosexp(self, tosexp=None):
         val = self._val
         for (s, q) in self._lisp_quoted_specials:
             val = val.replace(s, q)
         return '"{0}"'.format(val)
+
+    @classmethod
+    def unquote(cls, string):
+        return cls._lisp_quoted_to_raw.get(string, string)
 
 
 class Quoted(SExpBase):
@@ -494,7 +500,7 @@ class Parser(object):
             if c == '"':
                 return
             elif c == '\\':
-                yield laiter.next()
+                yield String.unquote(c + laiter.next())
             else:
                 yield c
 
