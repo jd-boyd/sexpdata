@@ -115,3 +115,10 @@ def test_lookaheaditerator_consume_until_simple():
     laiter = LookAheadIterator(range(10))
     laiter.consume_until(3)
     eq_(laiter.next(), 4)
+
+
+def test_lookaheaditerator_consume_until_simple_after_lookahead():
+    laiter = LookAheadIterator(range(10))
+    eq_(laiter.lookahead(), 0)
+    laiter.consume_until(0)
+    eq_(laiter.next(), 1)

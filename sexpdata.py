@@ -510,6 +510,10 @@ class LookAheadIterator(Iterator):
             return default
 
     def consume_until(self, end):
+        # In case `lookahead` was just called
+        if next(self) == end:
+            return
+        # Use raw `self._iter` for efficiency
         iter = self._iter
         while True:
             if next(iter) == end:
