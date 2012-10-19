@@ -160,6 +160,9 @@ def loads(string, **kwds):
     :type        false: str or None
     :keyword     false: A symbol interpreted as False.
                         Default is ``None``.
+    :type     line_comment: str
+    :keyword  line_comment: Beginning of line comment.
+                            Default is ``';'``.
 
     >>> loads("(a b)")
     [Symbol('a'), Symbol('b')]
@@ -169,6 +172,16 @@ def loads(string, **kwds):
     [Symbol('a'), Quoted(Symbol('b'))]
     >>> loads("(a '(b))")
     [Symbol('a'), Quoted([Symbol('b')])]
+    >>> loads('''
+    ... ;; This is a line comment.
+    ... ("a" "b")  ; this is also a comment.
+    ... ''')
+    ['a', 'b']
+    >>> loads('''
+    ... # This is a line comment.
+    ... ("a" "b")  # this is also a comment.
+    ... ''', line_comment='#')
+    ['a', 'b']
 
     ``nil`` is converted to an empty list by default.  You can use
     keyword argument `nil` to change what symbol must be interpreted
@@ -509,6 +522,16 @@ class LookAheadIterator(Iterator):
         else:
             return default
 
+    def consume_until(self, end):
+        # In case `lookahead` was just called
+        if next(self) == end:
+            return
+        # Use raw `self._iter` for efficiency
+        iter = self._iter
+        while True:
+            if next(iter) == end:
+                break
+
 
 class Parser(object):
 
@@ -516,11 +539,13 @@ class Parser(object):
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
 
-    def __init__(self, string_to=None, nil='nil', true='t', false=None):
+    def __init__(self, string_to=None, nil='nil', true='t', false=None,
+                 line_comment=';'):
         self.nil = nil
         self.true = true
         self.false = false
         self.string_to = (lambda x: x) if string_to is None else string_to
+        self.line_comment = line_comment
 
     @staticmethod
     @return_as(lambda x: ''.join(x))
@@ -583,6 +608,8 @@ class Parser(object):
                 yield Quoted(subsexp[0])
                 for sexp in subsexp[1:]:
                     yield sexp
+            elif c == self.line_comment:
+                laiter.consume_until('\n')
             else:
                 yield self.parse_atom(laiter)
 

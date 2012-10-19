@@ -28,6 +28,7 @@ data_identity = [
     "'",
     '\\',
     '\\\"',
+    ";",
 ]
 
 data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
@@ -109,3 +110,16 @@ def test_lookaheaditerator_has_next():
     assert laiter.has_next() is True
     list(laiter)
     assert laiter.has_next() is False
+
+
+def test_lookaheaditerator_consume_until_simple():
+    laiter = LookAheadIterator(range(10))
+    laiter.consume_until(3)
+    eq_(laiter.next(), 4)
+
+
+def test_lookaheaditerator_consume_until_simple_after_lookahead():
+    laiter = LookAheadIterator(range(10))
+    eq_(laiter.lookahead(), 0)
+    laiter.consume_until(0)
+    eq_(laiter.next(), 1)
