@@ -1,6 +1,6 @@
 from sexpdata import (
     ExpectClosingBracket, ExpectNothing, LookAheadIterator,
-    parse, tosexp, Symbol, Quoted, bracket,
+    parse, tosexp, Symbol, String, Quoted, bracket,
 )
 from nose.tools import eq_, raises
 
@@ -26,7 +26,12 @@ data_identity = [
     "",
     "''",
     "'",
+    '\\',
+    '\\\"',
 ]
+
+data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
+data_identity += map(lambda x: x[1], String._lisp_quoted_specials)
 
 
 def check_identity(obj):
