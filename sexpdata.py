@@ -249,6 +249,9 @@ def dumps(obj, **kwds):
     '(:a 1 :b 2)'
     >>> dumps([None, True, False, ()])
     '(() t () ())'
+    >>> dumps([None, True, False, ()],
+    ...       none_as='null', true_as='#t', false_as='#f')
+    '(null #t #f ())'
     >>> dumps(('a', 'b'))
     '("a" "b")'
     >>> dumps(('a', 'b'), tuple_as='array')
@@ -309,8 +312,11 @@ def cdr(obj):
 
 ### Core
 
-def tosexp(obj, str_as='string', tuple_as='list'):
-    _tosexp = lambda x: tosexp(x, str_as=str_as, tuple_as=tuple_as)
+def tosexp(obj, str_as='string', tuple_as='list',
+           true_as='t', false_as='()', none_as='()'):
+    _tosexp = lambda x: tosexp(
+        x, str_as=str_as, tuple_as=tuple_as,
+        true_as=true_as, false_as=false_as, none_as=none_as)
     if isinstance(obj, list):
         return Bracket(obj, '(').tosexp(_tosexp)
     elif isinstance(obj, tuple):
@@ -321,11 +327,11 @@ def tosexp(obj, str_as='string', tuple_as='list'):
         else:
             raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
     elif obj is True:  # must do this before ``isinstance(obj, int)``
-        return 't'
+        return true_as
     elif obj is False:
-        return '()'
+        return false_as
     elif obj is None:
-        return '()'
+        return none_as
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, basestring):
