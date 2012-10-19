@@ -494,7 +494,6 @@ class Parser(object):
             if c == '"':
                 return
             elif c == '\\':
-                yield c
                 yield laiter.next()
             else:
                 yield c
