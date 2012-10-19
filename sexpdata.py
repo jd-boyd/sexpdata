@@ -237,7 +237,15 @@ def dumps(obj, **kwds):
     :type     tuple_as: ``'list'`` or ``'array'``
     :keyword  tuple_as: How tuple should be interpreted.
                         Default is ``'list'``.
-
+    :type      true_as: str
+    :keyword   true_as: How True should be interpreted.
+                        Default is ``'t'``
+    :type     false_as: str
+    :keyword  false_as: How False should be interpreted.
+                        Default is ``'()'``
+    :type      none_as: str
+    :keyword   none_as: How None should be interpreted.
+                        Default is ``'()'``
 
     Basic usage:
 
@@ -247,6 +255,11 @@ def dumps(obj, **kwds):
     '(a b)'
     >>> dumps(dict(a=1, b=2))
     '(:a 1 :b 2)'
+    >>> dumps([None, True, False, ()])
+    '(() t () ())'
+    >>> dumps([None, True, False, ()],
+    ...       none_as='null', true_as='#t', false_as='#f')
+    '(null #t #f ())'
     >>> dumps(('a', 'b'))
     '("a" "b")'
     >>> dumps(('a', 'b'), tuple_as='array')
@@ -307,8 +320,20 @@ def cdr(obj):
 
 ### Core
 
-def tosexp(obj, str_as='string', tuple_as='list'):
-    _tosexp = lambda x: tosexp(x, str_as=str_as, tuple_as=tuple_as)
+def tosexp(obj, str_as='string', tuple_as='list',
+           true_as='t', false_as='()', none_as='()'):
+    """
+    Convert an object to an S-expression (`dumps` is just calling this).
+
+    See this table for comparison of lispy languages, to support them
+    as much as possible:
+    `Lisp: Common Lisp, Scheme/Racket, Clojure, Emacs Lisp - Hyperpolyglot
+    <http://hyperpolyglot.org/lisp>`_
+
+    """
+    _tosexp = lambda x: tosexp(
+        x, str_as=str_as, tuple_as=tuple_as,
+        true_as=true_as, false_as=false_as, none_as=none_as)
     if isinstance(obj, list):
         return Bracket(obj, '(').tosexp(_tosexp)
     elif isinstance(obj, tuple):
@@ -318,6 +343,12 @@ def tosexp(obj, str_as='string', tuple_as='list'):
             return Bracket(obj, '[').tosexp(_tosexp)
         else:
             raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
+    elif obj is True:  # must do this before ``isinstance(obj, int)``
+        return true_as
+    elif obj is False:
+        return false_as
+    elif obj is None:
+        return none_as
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, basestring):
