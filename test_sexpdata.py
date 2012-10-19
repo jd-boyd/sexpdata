@@ -22,6 +22,10 @@ data_identity = [
     [Symbol('a'), Quoted(Symbol('b')), Symbol('c'), Quoted(Symbol('d'))],
     [bracket([1, 2, 3], '[')],
     [bracket([1, [2, bracket([3], '[')]], '[')],
+    '""',
+    "",
+    "''",
+    "'",
 ]
 
 
