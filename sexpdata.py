@@ -322,6 +322,15 @@ def cdr(obj):
 
 def tosexp(obj, str_as='string', tuple_as='list',
            true_as='t', false_as='()', none_as='()'):
+    """
+    Convert an object to an S-expression (`dumps` is just calling this).
+
+    See this table for comparison of lispy languages, to support them
+    as much as possible:
+    `Lisp: Common Lisp, Scheme/Racket, Clojure, Emacs Lisp - Hyperpolyglot
+    <http://hyperpolyglot.org/lisp>`_
+
+    """
     _tosexp = lambda x: tosexp(
         x, str_as=str_as, tuple_as=tuple_as,
         true_as=true_as, false_as=false_as, none_as=none_as)
