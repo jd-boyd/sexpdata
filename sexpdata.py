@@ -509,6 +509,12 @@ class LookAheadIterator(Iterator):
         else:
             return default
 
+    def consume_until(self, end):
+        iter = self._iter
+        while True:
+            if next(iter) == end:
+                break
+
 
 class Parser(object):
 
