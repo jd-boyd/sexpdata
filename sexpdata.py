@@ -177,6 +177,11 @@ def loads(string, **kwds):
     ... ("a" "b")  ; this is also a comment.
     ... ''')
     ['a', 'b']
+    >>> loads('''
+    ... # This is a line comment.
+    ... ("a" "b")  # this is also a comment.
+    ... ''', line_comment='#')
+    ['a', 'b']
 
     ``nil`` is converted to an empty list by default.  You can use
     keyword argument `nil` to change what symbol must be interpreted

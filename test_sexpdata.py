@@ -28,6 +28,7 @@ data_identity = [
     "'",
     '\\',
     '\\\"',
+    ";",
 ]
 
 data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
