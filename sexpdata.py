@@ -237,7 +237,15 @@ def dumps(obj, **kwds):
     :type     tuple_as: ``'list'`` or ``'array'``
     :keyword  tuple_as: How tuple should be interpreted.
                         Default is ``'list'``.
-
+    :type      true_as: str
+    :keyword   true_as: How True should be interpreted.
+                        Default is ``'t'``
+    :type     false_as: str
+    :keyword  false_as: How False should be interpreted.
+                        Default is ``'()'``
+    :type      none_as: str
+    :keyword   none_as: How None should be interpreted.
+                        Default is ``'()'``
 
     Basic usage:
 
