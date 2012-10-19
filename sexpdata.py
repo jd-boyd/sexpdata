@@ -247,6 +247,8 @@ def dumps(obj, **kwds):
     '(a b)'
     >>> dumps(dict(a=1, b=2))
     '(:a 1 :b 2)'
+    >>> dumps([None, True, False, ()])
+    '(() t () ())'
     >>> dumps(('a', 'b'))
     '("a" "b")'
     >>> dumps(('a', 'b'), tuple_as='array')
@@ -318,6 +320,12 @@ def tosexp(obj, str_as='string', tuple_as='list'):
             return Bracket(obj, '[').tosexp(_tosexp)
         else:
             raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
+    elif obj is True:  # must do this before ``isinstance(obj, int)``
+        return 't'
+    elif obj is False:
+        return '()'
+    elif obj is None:
+        return '()'
     elif isinstance(obj, (int, float)):
         return str(obj)
     elif isinstance(obj, basestring):
