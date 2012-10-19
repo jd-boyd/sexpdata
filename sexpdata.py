@@ -380,7 +380,8 @@ class Symbol(SExpBase):
 class String(SExpBase):
 
     _lisp_quoted_specials = [  # from Pymacs
-        ('"', '\\"'), ('\\', '\\\\'), ('\b', '\\b'), ('\f', '\\f'),
+        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
+        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
         ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
 
     def tosexp(self, tosexp=None):
