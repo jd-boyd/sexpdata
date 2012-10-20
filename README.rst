@@ -19,7 +19,7 @@ You can install `sexpdata` from PyPI_::
 
 Links:
 
-* `Documentaions (at Read the Docs) <http://sexpdata.readthedocs.org/>`_
+* `Documentation (at Read the Docs) <http://sexpdata.readthedocs.org/>`_
 * `Repository (at GitHub) <https://github.com/tkf/sexpdata>`_
 * `Issue tracker (at GitHub) <https://github.com/tkf/sexpdata/issues>`_
 * `PyPI <http://pypi.python.org/pypi/sexpdata>`_
