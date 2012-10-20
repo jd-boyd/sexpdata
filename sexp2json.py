@@ -4,8 +4,9 @@
 Convert S-expressions in files to JSONs.
 """
 
-import sexpdata
+import sys
 import json
+import sexpdata
 
 
 def tojsonable(obj):
@@ -16,17 +17,25 @@ def tojsonable(obj):
     return obj
 
 
-def sexp2json(file, out):
+def sexp2json(file, out, recursionlimit):
+    sys.setrecursionlimit(recursionlimit)
     for path in file:
         with open(path) as f:
             json.dump(tojsonable(sexpdata.parse(f.read())), out, indent=2)
 
 
 def main(args=None):
-    from argparse import ArgumentParser, FileType
-    parser = ArgumentParser(description=__doc__)
+    import argparse
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=__doc__)
     parser.add_argument('file', nargs='*')
-    parser.add_argument('--out', '-o', type=FileType('wt'), default='-')
+    parser.add_argument('--out', '-o', type=argparse.FileType('wt'),
+                        default='-',
+                        help='Output file.',)
+    parser.add_argument('--recursionlimit', '-l', type=int,
+                        default=sys.getrecursionlimit(),
+                        help='Set Python recursion limit.')
     ns = parser.parse_args(args)
     sexp2json(**vars(ns))
 
