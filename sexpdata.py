@@ -587,31 +587,35 @@ class Parser(object):
     def parse_sexp(self, laiter):
         sexp = []
         append = sexp.append
-        while laiter.has_next():
-            c = laiter.lookahead()
-            if c == '"':
-                append(self.string_to(self.parse_str(laiter)))
-            elif c in whitespace:
-                laiter.next()
-                continue
-            elif c in BRACKETS:
-                close = BRACKETS[c]
-                laiter.next()
-                append(bracket(self.parse_sexp(laiter), c))
-                if laiter.lookahead_safe() != close:
-                    raise ExpectClosingBracket(laiter.lookahead_safe(), close)
-                laiter.next()
-            elif c in self.closing_brackets:
-                break
-            elif c == "'":
-                laiter.next()
-                subsexp = self.parse_sexp(laiter)
-                append(Quoted(subsexp[0]))
-                sexp.extend(subsexp[1:])
-            elif c == self.line_comment:
-                laiter.consume_until('\n')
-            else:
-                append(self.parse_atom(laiter))
+        try:
+            while laiter.has_next():
+                c = laiter.lookahead()
+                if c == '"':
+                    append(self.string_to(self.parse_str(laiter)))
+                elif c in whitespace:
+                    laiter.next()
+                    continue
+                elif c in BRACKETS:
+                    close = BRACKETS[c]
+                    laiter.next()
+                    append(bracket(self.parse_sexp(laiter), c))
+                    if laiter.lookahead_safe() != close:
+                        raise ExpectClosingBracket(
+                            laiter.lookahead_safe(), close)
+                    laiter.next()
+                elif c in self.closing_brackets:
+                    break
+                elif c == "'":
+                    laiter.next()
+                    subsexp = self.parse_sexp(laiter)
+                    append(Quoted(subsexp[0]))
+                    sexp.extend(subsexp[1:])
+                elif c == self.line_comment:
+                    laiter.consume_until('\n')
+                else:
+                    append(self.parse_atom(laiter))
+        except StopIteration:
+            pass
         return sexp
 
 
