@@ -584,19 +584,20 @@ class Parser(object):
             except ValueError:
                 return Symbol(token)
 
-    @return_as(list)
     def parse_sexp(self, laiter):
+        sexp = []
+        append = sexp.append
         while laiter.has_next():
             c = laiter.lookahead()
             if c == '"':
-                yield self.string_to(self.parse_str(laiter))
+                append(self.string_to(self.parse_str(laiter)))
             elif c in whitespace:
                 laiter.next()
                 continue
             elif c in BRACKETS:
                 close = BRACKETS[c]
                 laiter.next()
-                yield bracket(self.parse_sexp(laiter), c)
+                append(bracket(self.parse_sexp(laiter), c))
                 if laiter.lookahead_safe() != close:
                     raise ExpectClosingBracket(laiter.lookahead_safe(), close)
                 laiter.next()
@@ -605,13 +606,13 @@ class Parser(object):
             elif c == "'":
                 laiter.next()
                 subsexp = self.parse_sexp(laiter)
-                yield Quoted(subsexp[0])
-                for sexp in subsexp[1:]:
-                    yield sexp
+                append(Quoted(subsexp[0]))
+                sexp.extend(subsexp[1:])
             elif c == self.line_comment:
                 laiter.consume_until('\n')
             else:
-                yield self.parse_atom(laiter)
+                append(self.parse_atom(laiter))
+        return sexp
 
 
 def parse(iterable, **kwds):
