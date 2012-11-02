@@ -76,6 +76,10 @@ def test_not_enough_brackets():
     parse("(a (b)")
 
 
+def test_no_eol_after_comment():
+    eq_(parse('a ; comment'), [Symbol('a')])
+
+
 def test_lookaheaditerator_as_normal():
     for length in [0, 1, 2, 3, 5]:
         lst = range(length)
