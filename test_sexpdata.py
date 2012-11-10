@@ -1,8 +1,26 @@
+# -*- coding: utf-8 -*-
+
 from sexpdata import (
+    PY3,
     ExpectClosingBracket, ExpectNothing, LookAheadIterator,
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
 from nose.tools import eq_, raises
+
+
+### Python 3 compatibility
+
+if PY3:
+    utf8 = lambda s: s
+else:
+    utf8 = lambda s: s.decode('utf-8')
+
+utf8.__doc__ = """
+Decode a raw string into unicode object.  Do nothing in Python 3.
+"""
+
+
+### Test cases
 
 data_identity = [
     Symbol('a'),
@@ -29,6 +47,7 @@ data_identity = [
     '\\',
     '\\\"',
     ";",
+    utf8("日本語能力!!ソﾊﾝｶｸ"),
 ]
 
 data_identity += map(lambda x: x[0], String._lisp_quoted_specials)

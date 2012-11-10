@@ -77,8 +77,10 @@ BRACKETS = {'(': ')', '[': ']'}
 
 try:
     unicode
+    PY3 = False
 except NameError:
     basestring = unicode = str  # Python 3
+    PY3 = True
 
 
 ### Utility
