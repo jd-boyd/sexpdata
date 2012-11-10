@@ -271,32 +271,32 @@ def dumps(obj, **kwds):
 
     Basic usage:
 
-    >>> dumps(['a', 'b'])
-    '("a" "b")'
-    >>> dumps(['a', 'b'], str_as='symbol')
-    '(a b)'
-    >>> dumps(dict(a=1, b=2))
-    '(:a 1 :b 2)'
-    >>> dumps([None, True, False, ()])
-    '(() t () ())'
-    >>> dumps([None, True, False, ()],
-    ...       none_as='null', true_as='#t', false_as='#f')
-    '(null #t #f ())'
-    >>> dumps(('a', 'b'))
-    '("a" "b")'
-    >>> dumps(('a', 'b'), tuple_as='array')
-    '["a" "b"]'
+    >>> print(dumps(['a', 'b']))
+    ("a" "b")
+    >>> print(dumps(['a', 'b'], str_as='symbol'))
+    (a b)
+    >>> print(dumps(dict(a=1, b=2)))
+    (:a 1 :b 2)
+    >>> print(dumps([None, True, False, ()]))
+    (() t () ())
+    >>> print(dumps([None, True, False, ()],
+    ...             none_as='null', true_as='#t', false_as='#f'))
+    (null #t #f ())
+    >>> print(dumps(('a', 'b')))
+    ("a" "b")
+    >>> print(dumps(('a', 'b'), tuple_as='array'))
+    ["a" "b"]
 
     More verbose usage:
 
-    >>> dumps([Symbol('a'), Symbol('b')])
-    '(a b)'
-    >>> dumps(Symbol('a'))
-    'a'
-    >>> dumps([Symbol('a'), Quoted(Symbol('b'))])
-    "(a 'b)"
-    >>> dumps([Symbol('a'), Quoted([Symbol('b')])])
-    "(a '(b))"
+    >>> print(dumps([Symbol('a'), Symbol('b')]))
+    (a b)
+    >>> print(dumps(Symbol('a')))
+    a
+    >>> print(dumps([Symbol('a'), Quoted(Symbol('b'))]))
+    (a 'b)
+    >>> print(dumps([Symbol('a'), Quoted([Symbol('b')])]))
+    (a '(b))
 
     """
     return tosexp(obj, **kwds)
