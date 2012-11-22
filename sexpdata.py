@@ -504,6 +504,7 @@ class Parser(object):
     closing_brackets = set(BRACKETS.values())
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
+    atom_end_re = re.compile("|".join(map(re.escape, atom_end)))
     quote_or_escape_re = re.compile(r'"|\\')
 
     def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
@@ -539,20 +540,10 @@ class Parser(object):
         return (i, ''.join(chars))
 
     def parse_atom(self, i):
-        # FIXME: use regexp!
         string = self.string
-        chars = []
-        append = chars.append
-        try:
-            while True:
-                c = string[i]
-                if c in self.atom_end:
-                    break
-                append(c)
-                i += 1
-        except IndexError:
-            pass
-        return (i, self.atom(''.join(chars)))
+        match = self.atom_end_re.search(string, i)
+        end = match.start() if match else len(string)
+        return (end, self.atom(string[i:end]))
 
     def atom(self, token):
         if token == self.nil:
