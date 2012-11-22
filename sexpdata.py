@@ -69,7 +69,6 @@ __all__ = [
 ]
 
 from string import whitespace
-from collections import Iterator
 import functools
 
 BRACKETS = {'(': ')', '[': ']'}
@@ -497,49 +496,6 @@ class ExpectNothing(Exception):
             "Too many closing brackets. "
             "Expected no character left in the sexp. "
             "Got: {0!r}", got))
-
-
-class LookAheadIterator(Iterator):
-
-    def __init__(self, iterable):
-        self._iter = iter(iterable)
-
-    def next(self):
-        if hasattr(self, '_next_item'):
-            item = self._next_item
-            del self._next_item
-        else:
-            item = next(self._iter)
-        return item
-
-    __next__ = next  # Python 3
-
-    def has_next(self):
-        try:
-            self.lookahead()
-            return True
-        except StopIteration:
-            return False
-
-    def lookahead(self):
-        self._next_item = self.next()
-        return self._next_item
-
-    def lookahead_safe(self, default=None):
-        if self.has_next():
-            return self.lookahead()
-        else:
-            return default
-
-    def consume_until(self, end):
-        # In case `lookahead` was just called
-        if next(self) == end:
-            return
-        # Use raw `self._iter` for efficiency
-        iter = self._iter
-        while True:
-            if next(iter) == end:
-                break
 
 
 class Parser(object):
