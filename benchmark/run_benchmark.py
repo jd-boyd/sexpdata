@@ -51,8 +51,25 @@ PREPARE = ''
 
 BUILD = ''
 
-if __name__ == '__main__':
+
+def main(args=None):
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--run-option', default='eod',
+        help="one of {'eod', 'all', 'last', integer}")
+    ns = parser.parse_args(args)
+
+    run_option = ns.run_option
+    if run_option.isdigit():
+        run_option = int(run_option)
+
     runner = BenchmarkRunner(benchmarks, REPO_PATH, REPO_URL,
                              BUILD, DB_PATH, TMP_DIR, PREPARE,
-                             run_option='eod', start_date=START_DATE)
+                             run_option=run_option, start_date=START_DATE)
     runner.run()
+    return runner
+
+
+if __name__ == '__main__':
+    runner = main()
