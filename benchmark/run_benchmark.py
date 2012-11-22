@@ -51,9 +51,8 @@ PREPARE = ''
 
 BUILD = ''
 
-runner = BenchmarkRunner(benchmarks, REPO_PATH, REPO_URL,
-                         BUILD, DB_PATH, TMP_DIR, PREPARE,
-                         run_option='eod', start_date=START_DATE)
-
 if __name__ == '__main__':
+    runner = BenchmarkRunner(benchmarks, REPO_PATH, REPO_URL,
+                             BUILD, DB_PATH, TMP_DIR, PREPARE,
+                             run_option='eod', start_date=START_DATE)
     runner.run()
