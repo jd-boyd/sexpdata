@@ -68,6 +68,7 @@ __all__ = [
     'Symbol', 'String', 'Quoted',
 ]
 
+import re
 from string import whitespace
 import functools
 
@@ -503,6 +504,7 @@ class Parser(object):
     closing_brackets = set(BRACKETS.values())
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
+    quote_or_escape_re = re.compile(r'"|\\')
 
     def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
                  line_comment=';'):
@@ -514,23 +516,26 @@ class Parser(object):
         self.line_comment = line_comment
 
     def parse_str(self, i):
-        # FIXME: use str.find
         string = self.string
         chars = []
         append = chars.append
+        search = self.quote_or_escape_re.search
 
         assert string[i] == '"'  # never fail
         while True:
             i += 1
-            c = string[i]
+            match = search(string, i)
+            end = match.start()
+            append(string[i:end])
+            c = match.group()
             if c == '"':
-                i += 1
+                i = end + 1
                 break
             elif c == '\\':
-                i += 1
+                i = end + 1
                 append(String.unquote(c + string[i]))
-            else:
-                append(c)
+        else:
+            raise ExpectClosingBracket('"', None)
         return (i, ''.join(chars))
 
     def parse_atom(self, i):
