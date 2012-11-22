@@ -3,7 +3,7 @@ from datetime import datetime
 
 from vbench.api import Benchmark, BenchmarkRunner
 
-START_DATE = datetime(2012, 11, 20)
+START_DATE = datetime(2012, 10, 16)
 
 common_setup = """
 import sexpdata
