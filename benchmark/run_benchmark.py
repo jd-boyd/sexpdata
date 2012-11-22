@@ -29,8 +29,12 @@ BUILD = ''
 
 
 def main(args=None):
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description=__doc__)
+    import argparse
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__
+        + "For more information, see the docstring of `BenchmarkRunner`:\n"
+        + BenchmarkRunner.__doc__)
     parser.add_argument(
         '--run-option', default='eod',
         help="one of {'eod', 'all', 'last', integer}")
