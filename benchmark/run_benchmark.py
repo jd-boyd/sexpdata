@@ -1,3 +1,10 @@
+"""
+Run benchmarks using vbench.
+
+Use plot_benchmark.py to view benchmark result.
+
+"""
+
 import os
 from datetime import datetime
 

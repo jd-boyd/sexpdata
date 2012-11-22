@@ -1,3 +1,10 @@
+"""
+Run benchmarks on the current work tree using `timeit`.
+
+Note that this script does not use vbench.
+
+"""
+
 import timeit
 
 import benchcode

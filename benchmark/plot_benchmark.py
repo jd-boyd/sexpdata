@@ -1,3 +1,10 @@
+"""
+Plot benchmark result.
+
+You need to run run_benchmark.py first to generate benchmark data.
+
+"""
+
 import os
 
 from matplotlib import pyplot
