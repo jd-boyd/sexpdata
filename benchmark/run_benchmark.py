@@ -22,21 +22,21 @@ string = '"{0}"'.format('x' * length)
     Benchmark(
         do_loads,
         common_setup + r"""
-string = '"{0}"'.format('\"' * length)
+string = '"{0}"'.format(r'\"' * length)
 """,
         name="Long string only with escaped quotes (plain:quote = 0:1)",
         start_date=START_DATE),
     Benchmark(
         do_loads,
         common_setup + r"""
-string = '"{0}"'.format('1\"' * length)
+string = '"{0}"'.format(r'1\"' * length)
 """,
         name="Long mixed string (plain:quote = 1:1)",
         start_date=START_DATE),
     Benchmark(
         do_loads,
         common_setup + r"""
-string = '"{0}"'.format('12345\"' * length)
+string = '"{0}"'.format(r'12345\"' * length)
 """,
         name="Long mixed string (plain:quote = 5:1)",
         start_date=START_DATE),
