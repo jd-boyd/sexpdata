@@ -565,42 +565,39 @@ class Parser(object):
         len_string = len(self.string)
         sexp = []
         append = sexp.append
-        try:
-            while i < len_string:
-                c = string[i]
-                if c == '"':
-                    (i, subsexp) = self.parse_str(i)
-                    append(self.string_to(subsexp))
-                elif c in whitespace:
-                    i += 1
-                    continue
-                elif c in BRACKETS:
-                    close = BRACKETS[c]
-                    (i, subsexp) = self.parse_sexp(i + 1)
-                    append(bracket(subsexp, c))
-                    try:
-                        nc = string[i]
-                    except IndexError:
-                        nc = None
-                    if nc != close:
-                        raise ExpectClosingBracket(nc, close)
-                    i += 1
-                elif c in self.closing_brackets:
+        while i < len_string:
+            c = string[i]
+            if c == '"':
+                (i, subsexp) = self.parse_str(i)
+                append(self.string_to(subsexp))
+            elif c in whitespace:
+                i += 1
+                continue
+            elif c in BRACKETS:
+                close = BRACKETS[c]
+                (i, subsexp) = self.parse_sexp(i + 1)
+                append(bracket(subsexp, c))
+                try:
+                    nc = string[i]
+                except IndexError:
+                    nc = None
+                if nc != close:
+                    raise ExpectClosingBracket(nc, close)
+                i += 1
+            elif c in self.closing_brackets:
+                break
+            elif c == "'":
+                (i, subsexp) = self.parse_sexp(i + 1)
+                append(Quoted(subsexp[0]))
+                sexp.extend(subsexp[1:])
+            elif c == self.line_comment:
+                i = string.find('\n', i) + 1
+                if i <= 0:
+                    i = len_string
                     break
-                elif c == "'":
-                    (i, subsexp) = self.parse_sexp(i + 1)
-                    append(Quoted(subsexp[0]))
-                    sexp.extend(subsexp[1:])
-                elif c == self.line_comment:
-                    i = string.find('\n', i) + 1
-                    if i <= 0:
-                        i = len_string
-                        break
-                else:
-                    (i, subsexp) = self.parse_atom(i)
-                    append(subsexp)
-        except StopIteration:
-            pass
+            else:
+                (i, subsexp) = self.parse_atom(i)
+                append(subsexp)
         return (i, sexp)
 
     def parse(self):
