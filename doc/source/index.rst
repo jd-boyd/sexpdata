@@ -2,6 +2,20 @@
    :members:
 
 
+Changelog
+=========
+
+v0.0.2 (WIP)
+------------
+
+* Performance improvement.  Especially for long string literal.
+
+v0.0.1
+------
+
+* Initial release.
+
+
 Indices and tables
 ==================
 

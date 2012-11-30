@@ -2,9 +2,10 @@
 
 from sexpdata import (
     PY3,
-    ExpectClosingBracket, ExpectNothing, LookAheadIterator,
+    ExpectClosingBracket, ExpectNothing,
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
+import unittest
 from nose.tools import eq_, raises
 
 
@@ -63,6 +64,23 @@ def test_identity():
         yield (check_identity, data)
 
 
+class TestParseFluctuation(unittest.TestCase):
+
+    def assert_parse(self, string, obj):
+        """`string` must be parsed into `obj`."""
+        self.assertEqual(parse(string)[0], obj)
+
+    def test_spaces_must_be_ignored(self):
+        self.assert_parse(' \n\t\r  ( ( a )  \t\n\r  ( b ) )  ',
+                          [[Symbol('a')], [Symbol('b')]])
+
+    def test_spaces_between_parentheses_can_be_skipped(self):
+        self.assert_parse('((a)(b))', [[Symbol('a')], [Symbol('b')]])
+
+    def test_spaces_between_double_quotes_can_be_skipped(self):
+        self.assert_parse('("a""b")', ['a', 'b'])
+
+
 def test_tosexp_str_as():
     yield (eq_, tosexp('a', str_as='symbol'), 'a')
     yield (eq_, tosexp(['a'], str_as='symbol'), '(a)')
@@ -97,52 +115,3 @@ def test_not_enough_brackets():
 
 def test_no_eol_after_comment():
     eq_(parse('a ; comment'), [Symbol('a')])
-
-
-def test_lookaheaditerator_as_normal():
-    for length in [0, 1, 2, 3, 5]:
-        lst = range(length)
-        yield (eq_, list(iter(lst)), list(LookAheadIterator(lst)))
-
-
-def test_lookaheaditerator_lookahead():
-    laiter = LookAheadIterator(range(3))
-    eq_(laiter.lookahead(), 0)
-    eq_(laiter.lookahead(), 0)
-    eq_(laiter.next(), 0)
-    eq_(laiter.lookahead(), 1)
-    eq_(laiter.lookahead(), 1)
-    eq_(laiter.next(), 1)
-    eq_(laiter.lookahead(), 2)
-    eq_(laiter.lookahead(), 2)
-    eq_(laiter.next(), 2)
-    try:
-        laiter.next()
-        assert False
-    except StopIteration:
-        assert True
-    try:
-        laiter.lookahead()
-        assert False
-    except StopIteration:
-        assert True
-
-
-def test_lookaheaditerator_has_next():
-    laiter = LookAheadIterator(range(3))
-    assert laiter.has_next() is True
-    list(laiter)
-    assert laiter.has_next() is False
-
-
-def test_lookaheaditerator_consume_until_simple():
-    laiter = LookAheadIterator(range(10))
-    laiter.consume_until(3)
-    eq_(laiter.next(), 4)
-
-
-def test_lookaheaditerator_consume_until_simple_after_lookahead():
-    laiter = LookAheadIterator(range(10))
-    eq_(laiter.lookahead(), 0)
-    laiter.consume_until(0)
-    eq_(laiter.next(), 1)

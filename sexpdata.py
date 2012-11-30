@@ -68,8 +68,8 @@ __all__ = [
     'Symbol', 'String', 'Quoted',
 ]
 
+import re
 from string import whitespace
-from collections import Iterator
 import functools
 
 BRACKETS = {'(': ')', '[': ']'}
@@ -499,84 +499,51 @@ class ExpectNothing(Exception):
             "Got: {0!r}", got))
 
 
-class LookAheadIterator(Iterator):
-
-    def __init__(self, iterable):
-        self._iter = iter(iterable)
-
-    def next(self):
-        if hasattr(self, '_next_item'):
-            item = self._next_item
-            del self._next_item
-        else:
-            item = next(self._iter)
-        return item
-
-    __next__ = next  # Python 3
-
-    def has_next(self):
-        try:
-            self.lookahead()
-            return True
-        except StopIteration:
-            return False
-
-    def lookahead(self):
-        self._next_item = self.next()
-        return self._next_item
-
-    def lookahead_safe(self, default=None):
-        if self.has_next():
-            return self.lookahead()
-        else:
-            return default
-
-    def consume_until(self, end):
-        # In case `lookahead` was just called
-        if next(self) == end:
-            return
-        # Use raw `self._iter` for efficiency
-        iter = self._iter
-        while True:
-            if next(iter) == end:
-                break
-
-
 class Parser(object):
 
     closing_brackets = set(BRACKETS.values())
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
+    atom_end_re = re.compile("|".join(map(re.escape, atom_end)))
+    quote_or_escape_re = re.compile(r'"|\\')
 
-    def __init__(self, string_to=None, nil='nil', true='t', false=None,
+    def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
                  line_comment=';'):
+        self.string = string
         self.nil = nil
         self.true = true
         self.false = false
         self.string_to = (lambda x: x) if string_to is None else string_to
         self.line_comment = line_comment
 
-    @staticmethod
-    @return_as(lambda x: ''.join(x))
-    def parse_str(laiter):
-        assert laiter.next() == '"'  # never fail
+    def parse_str(self, i):
+        string = self.string
+        chars = []
+        append = chars.append
+        search = self.quote_or_escape_re.search
+
+        assert string[i] == '"'  # never fail
         while True:
-            c = laiter.next()
+            i += 1
+            match = search(string, i)
+            end = match.start()
+            append(string[i:end])
+            c = match.group()
             if c == '"':
-                return
-            elif c == '\\':
-                yield String.unquote(c + laiter.next())
-            else:
-                yield c
-
-    def parse_atom(self, laiter):
-        return self.atom(''.join(self._parse_atom(laiter)))
-
-    def _parse_atom(self, laiter):
-        while laiter.has_next():
-            if laiter.lookahead() in self.atom_end:
+                i = end + 1
                 break
-            yield laiter.next()
+            elif c == '\\':
+                i = end + 1
+                append(String.unquote(c + string[i]))
+        else:
+            raise ExpectClosingBracket('"', None)
+        return (i, ''.join(chars))
+
+    def parse_atom(self, i):
+        string = self.string
+        match = self.atom_end_re.search(string, i)
+        end = match.start() if match else len(string)
+        return (end, self.atom(string[i:end]))
 
     def atom(self, token):
         if token == self.nil:
@@ -593,42 +560,54 @@ class Parser(object):
             except ValueError:
                 return Symbol(token)
 
-    def parse_sexp(self, laiter):
+    def parse_sexp(self, i):
+        string = self.string
+        len_string = len(self.string)
         sexp = []
         append = sexp.append
-        try:
-            while laiter.has_next():
-                c = laiter.lookahead()
-                if c == '"':
-                    append(self.string_to(self.parse_str(laiter)))
-                elif c in whitespace:
-                    laiter.next()
-                    continue
-                elif c in BRACKETS:
-                    close = BRACKETS[c]
-                    laiter.next()
-                    append(bracket(self.parse_sexp(laiter), c))
-                    if laiter.lookahead_safe() != close:
-                        raise ExpectClosingBracket(
-                            laiter.lookahead_safe(), close)
-                    laiter.next()
-                elif c in self.closing_brackets:
+        while i < len_string:
+            c = string[i]
+            if c == '"':
+                (i, subsexp) = self.parse_str(i)
+                append(self.string_to(subsexp))
+            elif c in whitespace:
+                i += 1
+                continue
+            elif c in BRACKETS:
+                close = BRACKETS[c]
+                (i, subsexp) = self.parse_sexp(i + 1)
+                append(bracket(subsexp, c))
+                try:
+                    nc = string[i]
+                except IndexError:
+                    nc = None
+                if nc != close:
+                    raise ExpectClosingBracket(nc, close)
+                i += 1
+            elif c in self.closing_brackets:
+                break
+            elif c == "'":
+                (i, subsexp) = self.parse_sexp(i + 1)
+                append(Quoted(subsexp[0]))
+                sexp.extend(subsexp[1:])
+            elif c == self.line_comment:
+                i = string.find('\n', i) + 1
+                if i <= 0:
+                    i = len_string
                     break
-                elif c == "'":
-                    laiter.next()
-                    subsexp = self.parse_sexp(laiter)
-                    append(Quoted(subsexp[0]))
-                    sexp.extend(subsexp[1:])
-                elif c == self.line_comment:
-                    laiter.consume_until('\n')
-                else:
-                    append(self.parse_atom(laiter))
-        except StopIteration:
-            pass
+            else:
+                (i, subsexp) = self.parse_atom(i)
+                append(subsexp)
+        return (i, sexp)
+
+    def parse(self):
+        (i, sexp) = self.parse_sexp(0)
+        if i < len(self.string):
+            raise ExpectNothing(self.string[i:])
         return sexp
 
 
-def parse(iterable, **kwds):
+def parse(string, **kwds):
     """
     Parse s-expression.
 
@@ -642,8 +621,4 @@ def parse(iterable, **kwds):
     [[Symbol('a'), Quoted([Symbol('b')])]]
 
     """
-    laiter = LookAheadIterator(iterable)
-    sexp = Parser(**kwds).parse_sexp(laiter)
-    if laiter.has_next():
-        raise ExpectNothing(laiter.lookahead())
-    return sexp
+    return Parser(string, **kwds).parse()
