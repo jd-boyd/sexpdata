@@ -5,6 +5,7 @@ from sexpdata import (
     ExpectClosingBracket, ExpectNothing,
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
+import unittest
 from nose.tools import eq_, raises
 
 
@@ -61,6 +62,23 @@ def check_identity(obj):
 def test_identity():
     for data in data_identity:
         yield (check_identity, data)
+
+
+class TestParseFluctuation(unittest.TestCase):
+
+    def assert_parse(self, string, obj):
+        """`string` must be parsed into `obj`."""
+        self.assertEqual(parse(string)[0], obj)
+
+    def test_spaces_must_be_ignored(self):
+        self.assert_parse(' \n\t\r  ( ( a )  \t\n\r  ( b ) )  ',
+                          [[Symbol('a')], [Symbol('b')]])
+
+    def test_spaces_between_parentheses_can_be_skipped(self):
+        self.assert_parse('((a)(b))', [[Symbol('a')], [Symbol('b')]])
+
+    def test_spaces_between_double_quotes_can_be_skipped(self):
+        self.assert_parse('("a""b")', ['a', 'b'])
 
 
 def test_tosexp_str_as():
