@@ -64,11 +64,14 @@ def test_identity():
         yield (check_identity, data)
 
 
-class TestParseFluctuation(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
 
     def assert_parse(self, string, obj):
         """`string` must be parsed into `obj`."""
         self.assertEqual(parse(string)[0], obj)
+
+
+class TestParseFluctuation(BaseTestCase):
 
     def test_spaces_must_be_ignored(self):
         self.assert_parse(' \n\t\r  ( ( a )  \t\n\r  ( b ) )  ',
