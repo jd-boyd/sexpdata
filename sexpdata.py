@@ -423,11 +423,31 @@ class SExpBase(object):
         """
         raise NotImplementedError
 
+    @classmethod
+    def quote(cls, string):
+        for (s, q) in cls._lisp_quoted_specials:
+            string = string.replace(s, q)
+        return string
+
+    @classmethod
+    def unquote(cls, string):
+        return cls._lisp_quoted_to_raw.get(string, string)
+
 
 class Symbol(SExpBase):
 
+    _lisp_quoted_specials = [
+        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
+        ("'", r"\'"), ("`", r"\`"), ('"', r'\"'),
+        ('(', r'\('), (')', r'\)'), ('[', r'\['), (']', r'\]'),
+        (' ', r'\ '), ('.', r'\.'), (',', r'\,'), ('?', r'\?'),
+        (';', r'\;'), ('#', r'\#'),
+    ]
+
+    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
+
     def tosexp(self, tosexp=None):
-        return self._val
+        return self.quote(self._val)
 
 
 class String(SExpBase):
@@ -440,14 +460,7 @@ class String(SExpBase):
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def tosexp(self, tosexp=None):
-        val = self._val
-        for (s, q) in self._lisp_quoted_specials:
-            val = val.replace(s, q)
-        return uformat('"{0}"', val)
-
-    @classmethod
-    def unquote(cls, string):
-        return cls._lisp_quoted_to_raw.get(string, string)
+        return uformat('"{0}"', self.quote(self._val))
 
 
 class Quoted(SExpBase):
@@ -504,7 +517,8 @@ class Parser(object):
     closing_brackets = set(BRACKETS.values())
     atom_end = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
-    atom_end_re = re.compile("|".join(map(re.escape, atom_end)))
+    atom_end_or_escape_re = re.compile("|".join(map(re.escape,
+                                                    atom_end | set('\\'))))
     quote_or_escape_re = re.compile(r'"|\\')
 
     def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
@@ -541,9 +555,30 @@ class Parser(object):
 
     def parse_atom(self, i):
         string = self.string
-        match = self.atom_end_re.search(string, i)
-        end = match.start() if match else len(string)
-        return (end, self.atom(string[i:end]))
+        chars = []
+        append = chars.append
+        search = self.atom_end_or_escape_re.search
+        atom_end = self.atom_end
+
+        while True:
+            match = search(string, i)
+            if not match:
+                append(string[i:])
+                i = len(string)
+                break
+            end = match.start()
+            append(string[i:end])
+            c = match.group()
+            if c in atom_end:
+                i = end  # this is different from str
+                break
+            elif c == '\\':
+                i = end + 1
+                append(Symbol.unquote(c + string[i]))
+            i += 1
+        else:
+            raise ExpectClosingBracket('"', None)
+        return (i, self.atom(''.join(chars)))
 
     def atom(self, token):
         if token == self.nil:

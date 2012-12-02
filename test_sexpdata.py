@@ -48,6 +48,9 @@ data_identity = [
     '\\',
     '\\\"',
     ";",
+    Symbol(r'path.join'),
+    Symbol(r'path join'),
+    Symbol(r'path\join'),
     utf8("日本語能力!!ソﾊﾝｶｸ"),
 ]
 
@@ -64,11 +67,27 @@ def test_identity():
         yield (check_identity, data)
 
 
-class TestParseFluctuation(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
 
     def assert_parse(self, string, obj):
         """`string` must be parsed into `obj`."""
         self.assertEqual(parse(string)[0], obj)
+
+
+class TestSymbol(BaseTestCase):
+
+    def test_parse_symbol_with_backslash(self):
+        self.assert_parse(r'path\.join', Symbol(r'path.join'))
+        self.assert_parse(r'path\ join', Symbol(r'path join'))
+        self.assert_parse(r'path\\join', Symbol(r'path\join'))
+
+    def test_parse_special_symbols(self):
+        for s in [r'\\', r"\'", r"\`", r'\"', r'\(', r'\)', r'\[', r'\]',
+                  r'\ ', r'\.', r'\,', r'\?', r'\;', r'\#']:
+            self.assert_parse(s, Symbol(Symbol.unquote(s)))
+
+
+class TestParseFluctuation(BaseTestCase):
 
     def test_spaces_must_be_ignored(self):
         self.assert_parse(' \n\t\r  ( ( a )  \t\n\r  ( b ) )  ',
