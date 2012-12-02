@@ -444,7 +444,7 @@ class Symbol(SExpBase):
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def tosexp(self, tosexp=None):
-        return self._val
+        return self.quote(self._val)
 
 
 class String(SExpBase):
