@@ -71,6 +71,14 @@ class BaseTestCase(unittest.TestCase):
         self.assertEqual(parse(string)[0], obj)
 
 
+class TestSymbol(BaseTestCase):
+
+    def test_parse_symbol_with_backslash(self):
+        self.assert_parse(r'path\.join', Symbol(r'path.join'))
+        self.assert_parse(r'path\ join', Symbol(r'path join'))
+        self.assert_parse(r'path\\join', Symbol(r'path\join'))
+
+
 class TestParseFluctuation(BaseTestCase):
 
     def test_spaces_must_be_ignored(self):
