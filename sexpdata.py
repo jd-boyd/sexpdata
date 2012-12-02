@@ -424,6 +424,12 @@ class SExpBase(object):
         raise NotImplementedError
 
     @classmethod
+    def quote(cls, string):
+        for (s, q) in cls._lisp_quoted_specials:
+            string = string.replace(s, q)
+        return string
+
+    @classmethod
     def unquote(cls, string):
         return cls._lisp_quoted_to_raw.get(string, string)
 
@@ -451,10 +457,7 @@ class String(SExpBase):
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def tosexp(self, tosexp=None):
-        val = self._val
-        for (s, q) in self._lisp_quoted_specials:
-            val = val.replace(s, q)
-        return uformat('"{0}"', val)
+        return uformat('"{0}"', self.quote(self._val))
 
 
 class Quoted(SExpBase):
