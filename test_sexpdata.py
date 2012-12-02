@@ -48,6 +48,9 @@ data_identity = [
     '\\',
     '\\\"',
     ";",
+    Symbol(r'path.join'),
+    Symbol(r'path join'),
+    Symbol(r'path\join'),
     utf8("日本語能力!!ソﾊﾝｶｸ"),
 ]
 
