@@ -81,6 +81,11 @@ class TestSymbol(BaseTestCase):
         self.assert_parse(r'path\ join', Symbol(r'path join'))
         self.assert_parse(r'path\\join', Symbol(r'path\join'))
 
+    def test_parse_special_symbols(self):
+        for s in [r'\\', r"\'", r"\`", r'\"', r'\(', r'\)', r'\[', r'\]',
+                  r'\ ', r'\.', r'\,', r'\?', r'\;', r'\#']:
+            self.assert_parse(s, Symbol(Symbol.unquote(s)))
+
 
 class TestParseFluctuation(BaseTestCase):
 

@@ -438,7 +438,10 @@ class Symbol(SExpBase):
 
     _lisp_quoted_specials = [
         ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
-        ('"', '\\"'), ('.', '\\.'), (' ', '\\ '),
+        ("'", r"\'"), ("`", r"\`"), ('"', r'\"'),
+        ('(', r'\('), (')', r'\)'), ('[', r'\['), (']', r'\]'),
+        (' ', r'\ '), ('.', r'\.'), (',', r'\,'), ('?', r'\?'),
+        (';', r'\;'), ('#', r'\#'),
     ]
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
