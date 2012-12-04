@@ -3,3 +3,5 @@ before_install:
     pip install tox
 script:
     tox
+git:
+  submodules: false
