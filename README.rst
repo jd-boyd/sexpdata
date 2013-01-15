@@ -24,3 +24,10 @@ Links:
 * `Issue tracker (at GitHub) <https://github.com/tkf/sexpdata/issues>`_
 * `PyPI <http://pypi.python.org/pypi/sexpdata>`_
 * `Travis CI <https://travis-ci.org/#!/tkf/sexpdata>`_
+
+
+License
+-------
+
+`sexpdata` is licensed under the terms of the BSD 2-Clause License.
+See the source code for more information.
