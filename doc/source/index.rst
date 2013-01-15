@@ -5,8 +5,8 @@
 Changelog
 =========
 
-v0.0.2 (WIP)
-------------
+v0.0.2
+------
 
 * Performance improvement.  Especially for long string literal.
 
