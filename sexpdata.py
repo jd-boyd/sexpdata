@@ -94,10 +94,19 @@ except NameError:
 
 def uformat(s, *args, **kwds):
     """Alias of ``unicode(s).format(...)``."""
-    return unicode(s).format(*args, **kwds)
+    return tounicode(s).format(*args, **kwds)
 
 
 ### Utility
+
+def tounicode(string):
+    """
+    Decode `string` if it is not unicode.  Do nothing in Python 3.
+    """
+    if not isinstance(string, unicode):
+        string = unicode(string, 'utf-8')
+    return string
+
 
 def return_as(converter):
     """
@@ -434,7 +443,7 @@ class SExpBase(object):
     def quote(cls, string):
         for (s, q) in cls._lisp_quoted_specials:
             string = string.replace(s, q)
-        return string
+        return tounicode(string)
 
     @classmethod
     def unquote(cls, string):

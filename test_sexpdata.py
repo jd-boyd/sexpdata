@@ -100,6 +100,31 @@ class TestParseFluctuation(BaseTestCase):
         self.assert_parse('("a""b")', ['a', 'b'])
 
 
+class TestUnicode(BaseTestCase):
+
+    ustr = utf8("日本語能力!!ソﾊﾝｶｸ")
+
+    if not PY3:
+        # Let's not support dumping/parsing bytes.
+        # (In Python 3, ``string.encode()`` returns bytes.)
+
+        def test_dump_raw_utf8(self):
+            """
+            Test that sexpdata supports dumping encoded (raw) string.
+
+            See also: https://github.com/tkf/emacs-jedi/issues/43
+
+            """
+            ustr = self.ustr
+            sexp = utf8('"{0}"').format(ustr)
+            self.assertEqual(tosexp(ustr.encode('utf-8')), sexp)
+
+        def test_parse_raw_utf8(self):
+            ustr = self.ustr
+            sexp = utf8('"{0}"').format(ustr)
+            self.assert_parse(sexp.encode('utf-8'), ustr.encode('utf-8'))
+
+
 def test_tosexp_str_as():
     yield (eq_, tosexp('a', str_as='symbol'), 'a')
     yield (eq_, tosexp(['a'], str_as='symbol'), '(a)')
