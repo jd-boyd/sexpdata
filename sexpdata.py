@@ -94,7 +94,9 @@ except NameError:
 
 def uformat(s, *args, **kwds):
     """Alias of ``unicode(s).format(...)``."""
-    return unicode(s).format(*args, **kwds)
+    if not isinstance(s, unicode):
+        s = unicode(s, 'utf-8')
+    return s.format(*args, **kwds)
 
 
 ### Utility
@@ -434,6 +436,8 @@ class SExpBase(object):
     def quote(cls, string):
         for (s, q) in cls._lisp_quoted_specials:
             string = string.replace(s, q)
+        if not isinstance(string, unicode):
+            string = unicode(string, 'utf-8')
         return string
 
     @classmethod
