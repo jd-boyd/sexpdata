@@ -117,7 +117,7 @@ class TestUnicode(BaseTestCase):
             """
             ustr = self.ustr
             sexp = utf8('"{0}"').format(ustr)
-            self.assertEqual(String(ustr.encode('utf-8')).tosexp(), sexp)
+            self.assertEqual(tosexp(ustr.encode('utf-8')), sexp)
 
         def test_parse_raw_utf8(self):
             ustr = self.ustr
