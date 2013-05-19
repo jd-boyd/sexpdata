@@ -109,6 +109,12 @@ class TestUnicode(BaseTestCase):
         # (In Python 3, ``string.encode()`` returns bytes.)
 
         def test_dump_raw_utf8(self):
+            """
+            Test that sexpdata supports dumping encoded (raw) string.
+
+            See also: https://github.com/tkf/emacs-jedi/issues/43
+
+            """
             ustr = self.ustr
             sexp = utf8('"{0}"').format(ustr)
             self.assertEqual(String(ustr.encode('utf-8')).tosexp(), sexp)
