@@ -104,15 +104,19 @@ class TestUnicode(BaseTestCase):
 
     ustr = utf8("日本語能力!!ソﾊﾝｶｸ")
 
-    def test_dump_raw_utf8(self):
-        ustr = self.ustr
-        sexp = utf8('"{0}"').format(ustr)
-        self.assertEqual(String(ustr.encode('utf-8')).tosexp(), sexp)
+    if not PY3:
+        # Let's not support dumping/parsing bytes.
+        # (In Python 3, ``string.encode()`` returns bytes.)
 
-    def test_parse_raw_utf8(self):
-        ustr = self.ustr
-        sexp = utf8('"{0}"').format(ustr)
-        self.assert_parse(sexp.encode('utf-8'), ustr.encode('utf-8'))
+        def test_dump_raw_utf8(self):
+            ustr = self.ustr
+            sexp = utf8('"{0}"').format(ustr)
+            self.assertEqual(String(ustr.encode('utf-8')).tosexp(), sexp)
+
+        def test_parse_raw_utf8(self):
+            ustr = self.ustr
+            sexp = utf8('"{0}"').format(ustr)
+            self.assert_parse(sexp.encode('utf-8'), ustr.encode('utf-8'))
 
 
 def test_tosexp_str_as():
