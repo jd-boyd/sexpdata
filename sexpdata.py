@@ -531,10 +531,10 @@ class ExpectNothing(Exception):
 class Parser(object):
 
     closing_brackets = set(BRACKETS.values())
-    atom_end = \
+    _atom_end_basic = \
         set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
-    atom_end_or_escape_re = re.compile("|".join(map(re.escape,
-                                                    atom_end | set('\\'))))
+    _atom_end_basic_or_escape_regexp = "|".join(map(re.escape,
+                                                    _atom_end_basic | set('\\')))
     quote_or_escape_re = re.compile(r'"|\\')
 
     def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
@@ -545,6 +545,10 @@ class Parser(object):
         self.false = false
         self.string_to = (lambda x: x) if string_to is None else string_to
         self.line_comment = line_comment
+        self.atom_end = set([line_comment]) | self._atom_end_basic
+        self.atom_end_or_escape_re = \
+            re.compile("{0}|{1}".format(self._atom_end_basic_or_escape_regexp,
+                                        re.escape(line_comment)))
 
     def parse_str(self, i):
         string = self.string
