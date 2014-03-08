@@ -291,8 +291,8 @@ def dumps(obj, **kwds):
     ("a" "b")
     >>> print(dumps(['a', 'b'], str_as='symbol'))
     (a b)
-    >>> print(dumps(dict(a=1, b=2)))
-    (:a 1 :b 2)
+    >>> print(dumps(dict(a=1)))
+    (:a 1)
     >>> print(dumps([None, True, False, ()]))
     (() t () ())
     >>> print(dumps([None, True, False, ()],
