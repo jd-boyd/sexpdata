@@ -21,6 +21,12 @@ Decode a raw string into unicode object.  Do nothing in Python 3.
 """
 
 
+### Test utils
+
+def compare_parsed(sexp, obj):
+    eq_(parse(sexp), obj)
+
+
 ### Test cases
 
 data_identity = [
@@ -159,3 +165,8 @@ def test_not_enough_brackets():
 
 def test_no_eol_after_comment():
     eq_(parse('a ; comment'), [Symbol('a')])
+
+
+def test_issue_4():
+    yield (compare_parsed, "(0 ;; (\n)", [[0]])
+    yield (compare_parsed, "(0;; (\n)", [[0]])
