@@ -142,6 +142,13 @@ def test_tosexp_tuple_as():
     yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'["a"]')
 
 
+@raises(ValueError)
+def test_tosexp_value_errors():
+    tosexp((), tuple_as='')
+    tosexp('', str_as='')
+    tosexp(Parens())
+
+
 @raises(ExpectNothing)
 def test_too_many_brackets():
     parse("(a b))")
