@@ -78,8 +78,8 @@ __all__ = [
 
 import re
 from collections import Iterable, Mapping
+from itertools import chain
 from string import whitespace
-import functools
 
 BRACKETS = {'(': ')', '[': ']'}
 
@@ -92,47 +92,6 @@ try:
 except NameError:
     basestring = unicode = str  # Python 3
     PY3 = True
-
-
-def return_as(converter):
-    """
-    Decorator to convert result of a function.
-
-    It is just a function composition. The following two codes are
-    equivalent.
-
-    Using `@return_as`::
-
-        @return_as(converter)
-        def generator(args):
-            ...
-
-        result = generator(args)
-
-    Manually do the same::
-
-        def generator(args):
-            ...
-
-        result = converter(generator(args))
-
-    Example:
-
-    >>> @return_as(list)
-    ... def f():
-    ...     for i in range(3):
-    ...         yield i
-    ...
-    >>> f()  # this gives a list, not an iterator
-    [0, 1, 2]
-
-    """
-    def wrapper(generator):
-        @functools.wraps(generator)
-        def func(*args, **kwds):
-            return converter(generator(*args, **kwds))
-        return func
-    return wrapper
 
 
 ### Interface
@@ -381,7 +340,8 @@ def tosexp(obj, str_as='string', tuple_as='list',
         else:
             raise ValueError('str_as={0!r} is not valid'.format(str_as))
     elif isinstance(obj, Mapping):
-        return _tosexp(dict_to_plist(obj))
+        plist_pairs = ((Symbol(':' + k), v) for k, v in obj.items())
+        return Bracket(chain.from_iterable(plist_pairs), '(').tosexp(_tosexp)
     elif isinstance(obj, SExpBase):
         return obj.tosexp(_tosexp)
     elif isinstance(obj, Iterable):
@@ -390,13 +350,6 @@ def tosexp(obj, str_as='string', tuple_as='list',
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
             "It's value is '{1!r}'".format(type(obj), obj))
-
-
-@return_as(list)
-def dict_to_plist(obj):
-    for key in obj:
-        yield Symbol(':' + key)
-        yield obj[key]
 
 
 class SExpBase(object):
