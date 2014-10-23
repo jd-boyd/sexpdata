@@ -256,12 +256,12 @@ def dump(obj, filelike, **kwds):
 
     >>> import io
     >>> fp = io.StringIO()
-    >>> dump([Symbol('a'), Symbol('b')], fp)
+    >>> dump(('a', 'b'), fp, str_as='symbol')
     >>> print(fp.getvalue())
     (a b)
 
     """
-    filelike.write(unicode(dumps(obj)))
+    filelike.write(unicode(dumps(obj, **kwds)))
 
 
 def dumps(obj, **kwds):
