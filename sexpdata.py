@@ -76,6 +76,7 @@ __all__ = [
 ]
 
 import re
+from collections import Iterable, Mapping
 from string import whitespace
 import functools
 
@@ -372,9 +373,7 @@ def tosexp(obj, str_as='string', tuple_as='list',
     _tosexp = lambda x: tosexp(
         x, str_as=str_as, tuple_as=tuple_as,
         true_as=true_as, false_as=false_as, none_as=none_as)
-    if isinstance(obj, list):
-        return Bracket(obj, '(').tosexp(_tosexp)
-    elif isinstance(obj, tuple):
+    if isinstance(obj, tuple):
         if tuple_as == 'list':
             return Bracket(obj, '(').tosexp(_tosexp)
         elif tuple_as == 'array':
@@ -396,10 +395,12 @@ def tosexp(obj, str_as='string', tuple_as='list',
             return String(obj).tosexp()
         else:
             raise ValueError(uformat("str_as={0!r} is not valid", str_as))
-    elif isinstance(obj, dict):
+    elif isinstance(obj, Mapping):
         return _tosexp(dict_to_plist(obj))
     elif isinstance(obj, SExpBase):
         return obj.tosexp(_tosexp)
+    elif isinstance(obj, Iterable):
+        return Bracket(obj, '(').tosexp(_tosexp)
     else:
         raise TypeError(uformat(
             "Object of type '{0}' cannot be converted by `tosexp`. "
