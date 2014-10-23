@@ -246,6 +246,10 @@ def dumps(obj, **kwds):
     (a b)
     >>> print(dumps(dict(a=1)))
     (:a 1)
+    >>> import collections
+    >>> ProperTuple = collections.namedtuple('ProperTuple', 'k')
+    >>> print(dumps(ProperTuple('v')))
+    (:k "v")
     >>> print(dumps([None, True, False, ()]))
     (() t () ())
     >>> print(dumps([None, True, False, ()],
@@ -381,6 +385,8 @@ def _(obj, tuple_as='list', **kwds):
     kwds['tuple_as'] = tuple_as
     if hasattr(obj, '__to_lisp_as__'):
         return tosexp(obj.__to_lisp_as__(), **kwds)
+    elif hasattr(obj, '_asdict'):
+        return tosexp(Parens(obj._asdict()), **kwds)
     elif tuple_as == 'list':
         return tosexp(Parens(obj), **kwds)
     elif tuple_as == 'array':
