@@ -321,6 +321,11 @@ def tosexp(obj, **kwds):
     `Lisp: Common Lisp, Scheme/Racket, Clojure, Emacs Lisp - Hyperpolyglot
     <http://hyperpolyglot.org/lisp>`_
 
+    Most classes can be supported by tosexp() by adding a __to_lisp_as__ method
+    that returns a restructuring of an instance. The method can use builtin
+    types, sexpdata hinting classes, and instances of classes that have
+    tosexp() support.
+
     Methods that require customizing the recursion or output string of tosexp()
     should be registered with @sexpdata.tosexp.register(). Also the default
     handlers can be overridden by re-registration.
@@ -357,9 +362,12 @@ def tosexp(obj, **kwds):
     >>> dumps(round(math.pi, n) for n in range(5))
     '(3.0 3.1 3.14 3.14 3.14)'
     """
-    raise TypeError(
-        "Object of type '{0}' cannot be converted by `tosexp`. "
-        "It's value is '{1!r}'".format(type(obj), obj))
+    if hasattr(obj, '__to_lisp_as__'):
+        return tosexp(obj.__to_lisp_as__(), **kwds)
+    else:
+        raise TypeError(
+            "Object of type '{0}' cannot be converted by `tosexp`. "
+            "It's value is '{1!r}'".format(type(obj), obj))
 
 
 @tosexp.register(Iterable)
@@ -371,7 +379,9 @@ def _(obj, **kwds):
 @tosexp.register(tuple)
 def _(obj, tuple_as='list', **kwds):
     kwds['tuple_as'] = tuple_as
-    if tuple_as == 'list':
+    if hasattr(obj, '__to_lisp_as__'):
+        return tosexp(obj.__to_lisp_as__(), **kwds)
+    elif tuple_as == 'list':
         return tosexp(Parens(obj), **kwds)
     elif tuple_as == 'array':
         return tosexp(Brackets(obj), **kwds)
