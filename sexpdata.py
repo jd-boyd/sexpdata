@@ -73,7 +73,7 @@ __all__ = [
     # Utility functions:
     'car', 'cdr',
     # S-expression classes:
-    'Symbol', 'String', 'Quoted',
+    'Symbol', 'String', 'Quoted', 'Brackets', 'Parens', 'Splice',
 ]
 
 import re
@@ -319,9 +319,9 @@ def tosexp(obj, str_as='string', tuple_as='list',
         true_as=true_as, false_as=false_as, none_as=none_as)
     if isinstance(obj, tuple):
         if tuple_as == 'list':
-            return Bracket(obj, '(').tosexp(_tosexp)
+            return Parens(obj).tosexp(_tosexp)
         elif tuple_as == 'array':
-            return Bracket(obj, '[').tosexp(_tosexp)
+            return Brackets(obj).tosexp(_tosexp)
         else:
             raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
     elif obj is True:  # must do this before ``isinstance(obj, int)``
@@ -339,13 +339,10 @@ def tosexp(obj, str_as='string', tuple_as='list',
             return String(obj).tosexp()
         else:
             raise ValueError('str_as={0!r} is not valid'.format(str_as))
-    elif isinstance(obj, Mapping):
-        plist_pairs = ((Symbol(':' + k), v) for k, v in obj.items())
-        return Bracket(chain.from_iterable(plist_pairs), '(').tosexp(_tosexp)
     elif isinstance(obj, SExpBase):
         return obj.tosexp(_tosexp)
-    elif isinstance(obj, Iterable):
-        return Bracket(obj, '(').tosexp(_tosexp)
+    elif isinstance(obj, (Iterable, Mapping)):
+        return Parens(obj).tosexp(_tosexp)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
@@ -424,27 +421,97 @@ class Quoted(SExpBase):
         return "'" + tosexp(self._val)
 
 
-class Bracket(SExpBase):
+class Delimiters(SExpBase):
 
-    def __init__(self, val, bra):
-        assert bra in BRACKETS  # FIXME: raise an appropriate error
-        super(Bracket, self).__init__(val)
-        self._bra = bra
+    def __init__(self, *args):
+        if not args:
+            raise ValueError("Expected an Iterable/Mapping argument or *args")
+        val = args[0] if len(args) == 1 else args
 
-    def __repr__(self):
-        return "{0.__class__.__name__}({0._val!r}, {0._bra!r})".format(self)
+        if isinstance(val, Mapping):
+            plist_pairs = ((Symbol(':' + k), v) for k, v in val.items())
+            self._val = chain.from_iterable(plist_pairs)
+        elif not isinstance(val, basestring) and isinstance(val, Iterable):
+            self._val = val
+        else:
+            self._val = (val,) # unary *args
+
+    @staticmethod
+    def from_opener(opener, val):
+        cls_map = dict((cls.opener, cls) for cls in Delimiters.__subclasses__())
+        if opener in cls_map.keys():
+            return cls_map[opener](val)
+        else:
+            raise TypeError
 
     def tosexp(self, tosexp=tosexp):
-        return (self._bra +
+        return (self.__class__.opener +
                 ' '.join(tosexp(x) for x in self._val) +
-                BRACKETS[self._bra])
+                self.__class__.closer)
+
+
+class Brackets(Delimiters):
+    """
+    Outputs an Iterable or Mapping with square brackets.
+
+    Selectively make a container an array:
+
+    >>> dumps(Brackets(list(range(5))))
+    '[0 1 2 3 4]'
+
+    >>> dumps(Brackets(dict(a=1)))
+    '[:a 1]'
+    """
+
+    opener, closer = '[', ']'
+
+
+class Parens(Delimiters):
+    """
+    Outputs an Iterable or Mapping with parentheses.
+
+    By default Iterables and Mappings output with parentheses.
+
+    >>> dumps(range(5))
+    '(0 1 2 3 4)'
+    >>> dumps(dict(a=1))
+    '(:a 1)'
+
+    Selectively override the tuple_as='array' default parameter:
+
+    >>> dumps((0, Parens((1, 2, 3)), 4), tuple_as='array')
+    '[0 (1 2 3) 4]'
+    """
+
+    opener, closer = '(', ')'
+
+
+class Splice(Delimiters):
+    """
+    Outputs an Iterable or Mapping without delimiters. This acts like a "comma
+    splice", inserting a stream into its parent stream without mutations.
+
+    >>> dumps((0, range(1, 4), 4))
+    '(0 (1 2 3) 4)'
+    >>> dumps((0, Splice(range(1, 4)), 4))
+    '(0 1 2 3 4)'
+
+    This is also useful for emitting a series of S-expressions to a filelike.
+
+    >>> import itertools, sys
+    >>> dump(Splice(itertools.product('ab', range(3))), sys.stdout,
+    ...      str_as='symbol')
+    (a 0) (a 1) (a 2) (b 0) (b 1) (b 2)
+    """
+
+    opener = closer = ''
 
 
 def bracket(val, bra):
     if bra == '(':
         return val
     else:
-        return Bracket(val, bra)
+        return Delimiters.from_opener(bra, val)
 
 
 class ExpectClosingBracket(Exception):
