@@ -84,6 +84,14 @@ from string import whitespace
 BRACKETS = {'(': ')', '[': ']'}
 
 
+### PEP fallbacks
+
+try:
+    from functools import singledispatch
+except ImportError:
+    from singledispatch import singledispatch
+
+
 ### Python 3 compatibility
 
 try:
@@ -303,8 +311,8 @@ def cdr(obj):
 
 ### Core
 
-def tosexp(obj, str_as='string', tuple_as='list',
-           true_as='t', false_as='()', none_as='()'):
+@singledispatch
+def tosexp(obj, **kwds):
     """
     Convert an object to an S-expression (`dumps` is just calling this).
 
@@ -313,40 +321,89 @@ def tosexp(obj, str_as='string', tuple_as='list',
     `Lisp: Common Lisp, Scheme/Racket, Clojure, Emacs Lisp - Hyperpolyglot
     <http://hyperpolyglot.org/lisp>`_
 
+    Methods that require customizing the recursion or output string of tosexp()
+    should be registered with @sexpdata.tosexp.register(). Also the default
+    handlers can be overridden by re-registration.
+
+    Define tosexp() for a simple immutable Cons class. The dot is formatted
+    rather than doing a 3-tuple w/Symbol('.') hack.
+
+    >>> import collections
+    >>> import sexpdata
+    >>> class Cons(collections.namedtuple('Cons', 'car cdr')):
+    ...     pass
+    >>> @sexpdata.tosexp.register(Cons)
+    ... def _(obj, **kwds):
+    ...     return '({0} . {1})'.format(sexpdata.tosexp(obj.car, **kwds),
+    ...                                 sexpdata.tosexp(obj.cdr, **kwds))
+    ...
+    >>> dumps(Cons(True, False))
+    '(t . ())'
+
+    A simple alist using Cons:
+
+    >>> dumps(map(Cons, 'abcde', range(5)), str_as='symbol')
+    '((a . 0) (b . 1) (c . 2) (d . 3) (e . 4))'
+
+    Overriding the float handler for application-wide formatting:
+
+    >>> @sexpdata.tosexp.register(float)
+    ... def _(obj, **kwds):
+    ...     return '{0:.3}'.format(obj)
+    ...
+    >>> import math
+    >>> tuple(round(math.pi, n) for n in range(5)) # doctest: +SKIP
+    (3.0, 3.1, 3.14, 3.142, 3.1416)
+    >>> dumps(round(math.pi, n) for n in range(5))
+    '(3.0 3.1 3.14 3.14 3.14)'
     """
-    _tosexp = lambda x: tosexp(
-        x, str_as=str_as, tuple_as=tuple_as,
-        true_as=true_as, false_as=false_as, none_as=none_as)
-    if isinstance(obj, tuple):
-        if tuple_as == 'list':
-            return Parens(obj).tosexp(_tosexp)
-        elif tuple_as == 'array':
-            return Brackets(obj).tosexp(_tosexp)
-        else:
-            raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
-    elif obj is True:  # must do this before ``isinstance(obj, int)``
-        return true_as
-    elif obj is False:
-        return false_as
-    elif obj is None:
-        return none_as
-    elif isinstance(obj, (int, float)):
-        return str(obj)
-    elif isinstance(obj, basestring):
-        if str_as == 'symbol':
-            return obj
-        elif str_as == 'string':
-            return String(obj).tosexp()
-        else:
-            raise ValueError('str_as={0!r} is not valid'.format(str_as))
-    elif isinstance(obj, SExpBase):
-        return obj.tosexp(_tosexp)
-    elif isinstance(obj, (Iterable, Mapping)):
-        return Parens(obj).tosexp(_tosexp)
+    raise TypeError(
+        "Object of type '{0}' cannot be converted by `tosexp`. "
+        "It's value is '{1!r}'".format(type(obj), obj))
+
+
+@tosexp.register(Iterable)
+@tosexp.register(Mapping)
+def _(obj, **kwds):
+    return tosexp(Parens(obj), **kwds)
+
+
+@tosexp.register(tuple)
+def _(obj, tuple_as='list', **kwds):
+    kwds['tuple_as'] = tuple_as
+    if tuple_as == 'list':
+        return tosexp(Parens(obj), **kwds)
+    elif tuple_as == 'array':
+        return tosexp(Brackets(obj), **kwds)
     else:
-        raise TypeError(
-            "Object of type '{0}' cannot be converted by `tosexp`. "
-            "It's value is '{1!r}'".format(type(obj), obj))
+        raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
+
+
+@tosexp.register(basestring)
+def _(obj, str_as='string', **kwds):
+    kwds['str_as'] = str_as
+    if str_as == 'symbol':
+        return obj
+    elif str_as == 'string':
+        return String(obj).tosexp()
+    else:
+        raise ValueError('str_as={0!r} is not valid'.format(str_as))
+
+
+@tosexp.register(type(None))
+def _(obj, none_as='()', **kwds):
+    return none_as
+
+
+@tosexp.register(bool)
+def _(obj, false_as='()', true_as='t', **kwds):
+    return true_as if obj else false_as
+
+
+@tosexp.register(float)
+@tosexp.register(int)
+def _(obj, **kwds):
+    return str(obj)
 
 
 class SExpBase(object):
@@ -366,7 +423,7 @@ class SExpBase(object):
     def value(self):
         return self._val
 
-    def tosexp(self, tosexp=tosexp):
+    def tosexp(self, **kwds):
         """
         Decode this object into an S-expression string.
 
@@ -385,6 +442,10 @@ class SExpBase(object):
     def unquote(cls, string):
         return cls._lisp_quoted_to_raw.get(string, string)
 
+@tosexp.register(SExpBase)
+def _(obj, **kwds):
+    return obj.tosexp(**kwds)
+
 
 class Symbol(SExpBase):
 
@@ -398,7 +459,7 @@ class Symbol(SExpBase):
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
-    def tosexp(self, tosexp=None):
+    def tosexp(self, **kwds):
         return self.quote(self._val)
 
 
@@ -411,14 +472,14 @@ class String(SExpBase):
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
-    def tosexp(self, tosexp=None):
+    def tosexp(self, **kwds):
         return '"' + self.quote(self._val) + '"'
 
 
 class Quoted(SExpBase):
 
-    def tosexp(self, tosexp=tosexp):
-        return "'" + tosexp(self._val)
+    def tosexp(self, **kwds):
+        return "'" + tosexp(self._val, **kwds)
 
 
 class Delimiters(SExpBase):
@@ -444,9 +505,9 @@ class Delimiters(SExpBase):
         else:
             raise TypeError
 
-    def tosexp(self, tosexp=tosexp):
+    def tosexp(self, **kwds):
         return (self.__class__.opener +
-                ' '.join(tosexp(x) for x in self._val) +
+                ' '.join(tosexp(x, **kwds) for x in self._val) +
                 self.__class__.closer)
 
 

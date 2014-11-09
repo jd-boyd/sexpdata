@@ -1,17 +1,26 @@
+import sys
+
 from distutils.core import setup
 
-import sexpdata
+with open('README.rst') as f:
+    long_description = f.read()
+
+install_requires = []
+if sys.version_info < (3, 4):
+    install_requires.append('singledispatch')
+if sys.version_info < (2, 7):
+    install_requires.append('ordereddict')
 
 setup(
     name='sexpdata',
-    version=sexpdata.__version__,
+    version='0.0.4.dev1',
     py_modules=['sexpdata'],
-    author=sexpdata.__author__,
+    author='Takafumi Arakaki',
     author_email='aka.tkf@gmail.com',
     url='https://github.com/tkf/sexpdata',
-    license=sexpdata.__license__,
+    license='BSD License',
     description='S-expression parser for Python',
-    long_description=sexpdata.__doc__,
+    long_description=long_description,
     keywords='s-expression, lisp, parser',
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -30,4 +39,5 @@ setup(
         "Programming Language :: Emacs-Lisp",
         # see: http://pypi.python.org/pypi?%3Aaction=list_classifiers
     ],
+    install_requires=install_requires,
 )
