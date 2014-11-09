@@ -77,7 +77,7 @@ __all__ = [
 ]
 
 import re
-from collections import Iterable, Mapping
+from collections import namedtuple, Iterable, Mapping
 from itertools import chain
 from string import whitespace
 
@@ -246,8 +246,7 @@ def dumps(obj, **kwds):
     (a b)
     >>> print(dumps(dict(a=1)))
     (:a 1)
-    >>> import collections
-    >>> ProperTuple = collections.namedtuple('ProperTuple', 'k')
+    >>> ProperTuple = namedtuple('ProperTuple', 'k')
     >>> print(dumps(ProperTuple('v')))
     (:k "v")
     >>> print(dumps([None, True, False, ()]))
@@ -336,9 +335,8 @@ def tosexp(obj, **kwds):
     Define tosexp() for a simple immutable Cons class. The dot is formatted
     rather than doing a 3-tuple w/Symbol('.') hack.
 
-    >>> import collections
     >>> import sexpdata
-    >>> class Cons(collections.namedtuple('Cons', 'car cdr')):
+    >>> class Cons(namedtuple('Cons', 'car cdr')):
     ...     pass
     >>> @sexpdata.tosexp.register(Cons)
     ... def _(obj, **kwds):
@@ -421,37 +419,6 @@ def _(obj, **kwds):
     return str(obj)
 
 
-class SExpBase(object):
-
-    def __init__(self, val):
-        self._val = val
-
-    def __repr__(self):
-        return '{0.__class__.__name__}({0._val!r})'.format(self)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self._val == other._val
-        else:
-            return False
-
-    def value(self):
-        return self._val
-
-    def tosexp(self, **kwds):
-        """
-        Decode this object into an S-expression string.
-
-        :arg tosexp: A function to be used when converting sub S-expression.
-
-        """
-        raise NotImplementedError
-
-@tosexp.register(SExpBase)
-def _(obj, **kwds):
-    return obj.tosexp(**kwds)
-
-
 class String(unicode):
 
     def __eq__(self, other):
@@ -516,26 +483,30 @@ def _(obj, **kwds):
     return Symbol.quote(obj)
 
 
-class Quoted(SExpBase):
+class Quoted(namedtuple('Quoted', 'x')):
 
-    def tosexp(self, **kwds):
-        return "'" + tosexp(self._val, **kwds)
+    def __repr__(self):
+        return '{0.__class__.__name__}({0.x!r})'.format(self)
+
+@tosexp.register(Quoted)
+def _(obj, **kwds):
+    return "'" + tosexp(obj.x, **kwds)
 
 
-class Delimiters(SExpBase):
+class Delimiters(namedtuple('Delimiters', 'I')):
 
-    def __init__(self, *args):
+    def __new__(cls, *args):
         if not args:
             raise ValueError("Expected an Iterable/Mapping argument or *args")
-        val = args[0] if len(args) == 1 else args
+        x = args[0] if len(args) == 1 else args
 
-        if isinstance(val, Mapping):
-            plist_pairs = ((Symbol(':' + k), v) for k, v in val.items())
-            self._val = chain.from_iterable(plist_pairs)
-        elif not isinstance(val, basestring) and isinstance(val, Iterable):
-            self._val = val
+        if isinstance(x, Mapping):
+            plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
+            return tuple.__new__(cls, (chain.from_iterable(plist_pairs),))
+        elif not isinstance(x, basestring) and isinstance(x, Iterable):
+            return tuple.__new__(cls, (x,))
         else:
-            self._val = (val,) # unary *args
+            return tuple.__new__(cls, ((x,),)) # unary *args
 
     @staticmethod
     def from_opener(opener, val):
@@ -545,10 +516,11 @@ class Delimiters(SExpBase):
         else:
             raise TypeError
 
-    def tosexp(self, **kwds):
-        return (self.__class__.opener +
-                ' '.join(tosexp(x, **kwds) for x in self._val) +
-                self.__class__.closer)
+@tosexp.register(Delimiters)
+def _(self, **kwds):
+    return (self.__class__.opener +
+            ' '.join(tosexp(x, **kwds) for x in self.I) +
+            self.__class__.closer)
 
 
 class Brackets(Delimiters):
