@@ -307,8 +307,7 @@ def cdr(obj):
     # This is very lazy implementation.  Probably the best way to do
     # it is to define `Cons` S-expression class.
     if len(obj) > 2:
-        dot = obj[1]
-        if isinstance(dot, Symbol) and dot.value() == '.':
+        if obj[1] == Symbol('.'):
             return obj[2]
     return obj[1:]
 
@@ -401,7 +400,7 @@ def _(obj, str_as='string', **kwds):
     if str_as == 'symbol':
         return obj
     elif str_as == 'string':
-        return String(obj).tosexp()
+        return tosexp(String(obj))
     else:
         raise ValueError('str_as={0!r} is not valid'.format(str_as))
 
@@ -448,6 +447,43 @@ class SExpBase(object):
         """
         raise NotImplementedError
 
+@tosexp.register(SExpBase)
+def _(obj, **kwds):
+    return obj.tosexp(**kwds)
+
+
+class String(unicode):
+
+    def __eq__(self, other):
+        """
+        >>> from itertools import permutations
+        >>> S = 'a', String('a'), Symbol('a')
+        >>> all(x == x for x in S)
+        True
+        >>> any(x != x for x in S)
+        False
+        >>> any(x == y for x, y in permutations(S, 2))
+        False
+        >>> all(x != y for x, y in permutations(S, 2))
+        True
+        """
+        return (self.__class__ == other.__class__ and
+                unicode.__eq__(self, other))
+
+    def __ne__(self, other):
+        return not self == other
+
+    _lisp_quoted_specials = [  # from Pymacs
+        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
+        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
+        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
+
+    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
+
+    def __repr__(self):
+        return '{0}({1})'.format(self.__class__.__name__,
+                                 unicode.__repr__(self))
+
     @classmethod
     def quote(cls, string):
         for (s, q) in cls._lisp_quoted_specials:
@@ -458,12 +494,12 @@ class SExpBase(object):
     def unquote(cls, string):
         return cls._lisp_quoted_to_raw.get(string, string)
 
-@tosexp.register(SExpBase)
+@tosexp.register(String)
 def _(obj, **kwds):
-    return obj.tosexp(**kwds)
+    return '"' + String.quote(obj) + '"'
 
 
-class Symbol(SExpBase):
+class Symbol(String):
 
     _lisp_quoted_specials = [
         ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
@@ -475,21 +511,9 @@ class Symbol(SExpBase):
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
-    def tosexp(self, **kwds):
-        return self.quote(self._val)
-
-
-class String(SExpBase):
-
-    _lisp_quoted_specials = [  # from Pymacs
-        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
-        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
-        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
-
-    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
-
-    def tosexp(self, **kwds):
-        return '"' + self.quote(self._val) + '"'
+@tosexp.register(Symbol)
+def _(obj, **kwds):
+    return Symbol.quote(obj)
 
 
 class Quoted(SExpBase):
