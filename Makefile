@@ -13,7 +13,7 @@ doc: sexpdata.py
 	make -C doc html
 
 upload: sexpdata.py
-	python setup.py register sdist upload
+	python setup.py register sdist bdist_wheel --universal upload
 
 benchmark:
 	python benchmark/run_benchmark.py
