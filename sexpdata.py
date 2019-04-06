@@ -103,7 +103,7 @@ def tounicode(string):
     """
     Decode `string` if it is not unicode.  Do nothing in Python 3.
     """
-    if not isinstance(string, unicode):
+    if not isinstance(string, type(unicode)):
         string = unicode(string, 'utf-8')
     return string
 
