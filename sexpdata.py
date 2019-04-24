@@ -68,7 +68,7 @@ __author__ = 'Takafumi Arakaki'
 __license__ = 'BSD License'
 __all__ = [
     # API functions:
-    'load', 'loads', 'dump', 'dumps',
+    'load', 'loads', 'dump', 'dumps', 'parse',
     # Utility functions:
     'car', 'cdr',
     # S-expression classes:
