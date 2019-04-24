@@ -20,10 +20,10 @@ You can install `sexpdata` from PyPI_::
 Links:
 
 * `Documentation (at Read the Docs) <http://sexpdata.readthedocs.org/>`_
-* `Repository (at GitHub) <https://github.com/tkf/sexpdata>`_
-* `Issue tracker (at GitHub) <https://github.com/tkf/sexpdata/issues>`_
+* `Repository (at GitHub) <https://github.com/jd-boyd/sexpdata>`_
+* `Issue tracker (at GitHub) <https://github.com/jd-boyd/sexpdata/issues>`_
 * `PyPI <http://pypi.python.org/pypi/sexpdata>`_
-* `Travis CI <https://travis-ci.org/#!/tkf/sexpdata>`_
+* `Travis CI <https://travis-ci.org/#!/jd-boyd/sexpdata>`_
 
 
 License
