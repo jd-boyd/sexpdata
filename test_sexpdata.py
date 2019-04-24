@@ -2,11 +2,11 @@
 
 from sexpdata import (
     PY3,
-    ExpectClosingBracket, ExpectNothing,
+    ExpectClosingBracket, ExpectNothing, ExpectSExp,
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
 import unittest
-from nose.tools import eq_, raises
+from nose.tools import eq_, raises, assert_raises
 
 
 ### Python 3 compatibility
@@ -170,3 +170,18 @@ def test_no_eol_after_comment():
 def test_issue_4():
     yield (compare_parsed, "(0 ;; (\n)", [[0]])
     yield (compare_parsed, "(0;; (\n)", [[0]])
+
+
+def test_issue_18():
+    import sexpdata
+    sexp = "(foo)'   "
+    with assert_raises(ExpectSExp) as raised:
+        sexpdata.parse(sexp)
+    msg = raised.exception.args[0]
+    eq_(msg, 'No s-exp is found after an apostrophe at position 5')
+
+    sexp = "'   "
+    with assert_raises(ExpectSExp) as raised:
+        sexpdata.parse(sexp)
+    msg = raised.exception.args[0]
+    eq_(msg, 'No s-exp is found after an apostrophe at position 0')

@@ -528,6 +528,14 @@ class ExpectNothing(Exception):
             "Got: {0!r}", got))
 
 
+class ExpectSExp(Exception):
+
+    def __init__(self, pos):
+        super(ExpectSExp, self).__init__(uformat(
+            'No s-exp is found after an apostrophe'
+            ' at position {0}', pos))
+
+
 class Parser(object):
 
     closing_brackets = set(BRACKETS.values())
@@ -642,7 +650,10 @@ class Parser(object):
             elif c in self.closing_brackets:
                 break
             elif c == "'":
-                (i, subsexp) = self.parse_sexp(i + 1)
+                next_parse_start = i + 1
+                (i, subsexp) = self.parse_sexp(next_parse_start)
+                if not subsexp:
+                    raise ExpectSExp(next_parse_start - 1)
                 append(Quoted(subsexp[0]))
                 sexp.extend(subsexp[1:])
             elif c == self.line_comment:
