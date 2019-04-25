@@ -98,7 +98,7 @@ try:
     unicode
     PY3 = False
 except NameError:
-    basestring = unicode = str  # Python 3
+    unicode = str  # Python 3
     PY3 = True
 
 
@@ -392,7 +392,7 @@ def _(obj, tuple_as='list', **kwds):
         raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
 
 
-@tosexp.register(basestring)
+@tosexp.register(unicode)
 def _(obj, str_as='string', **kwds):
     kwds['str_as'] = str_as
     if str_as == 'symbol':
@@ -503,7 +503,7 @@ class Delimiters(namedtuple('Delimiters', 'I')):
         if isinstance(x, Mapping):
             plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
             return tuple.__new__(cls, (chain.from_iterable(plist_pairs),))
-        elif not isinstance(x, basestring) and isinstance(x, Iterable):
+        elif not isinstance(x, (unicode, bytes)) and isinstance(x, Iterable):
             return tuple.__new__(cls, (x,))
         else:
             return tuple.__new__(cls, ((x,),)) # unary *args
