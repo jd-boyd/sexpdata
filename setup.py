@@ -6,10 +6,8 @@ with open('README.rst') as f:
     long_description = f.read()
 
 install_requires = []
-if sys.version_info < (3, 4):
+if sys.version.split(" ")[0] < "3.4":
     install_requires.append('singledispatch')
-if sys.version_info < (2, 7):
-    install_requires.append('ordereddict')
 
 setup(
     name='sexpdata',
@@ -29,7 +27,6 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
