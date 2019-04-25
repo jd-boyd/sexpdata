@@ -73,7 +73,7 @@ __all__ = [
     # Utility functions:
     'car', 'cdr',
     # S-expression classes:
-    'Symbol', 'String', 'Quoted', 'Brackets', 'Parens', 'Splice',
+    'Symbol', 'String', 'Quoted', 'Brackets', 'Parens',
 ]
 
 import re
@@ -557,27 +557,6 @@ class Parens(Delimiters):
     """
 
     opener, closer = '(', ')'
-
-
-class Splice(Delimiters):
-    """
-    Outputs an Iterable or Mapping without delimiters. This acts like a "comma
-    splice", inserting a stream into its parent stream without mutations.
-
-    >>> dumps((0, range(1, 4), 4))
-    '(0 (1 2 3) 4)'
-    >>> dumps((0, Splice(range(1, 4)), 4))
-    '(0 1 2 3 4)'
-
-    This is also useful for emitting a series of S-expressions to a filelike.
-
-    >>> import itertools, sys
-    >>> dump(Splice(itertools.product('ab', range(3))), sys.stdout,
-    ...      str_as='symbol')
-    (a 0) (a 1) (a 2) (b 0) (b 1) (b 2)
-    """
-
-    opener = closer = ''
 
 
 def bracket(val, bra):
