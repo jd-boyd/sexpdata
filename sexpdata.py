@@ -65,7 +65,7 @@ See the source code for more information.
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 __version__ = '0.0.4'
-__author__ = 'Takafumi Arakaki, Joshua D. Boyd'
+__author__ = 'Joshua D. Boyd, Takafumi Arakaki'
 __license__ = 'BSD License'
 __all__ = [
     # API functions:

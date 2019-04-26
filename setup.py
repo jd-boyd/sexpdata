@@ -11,12 +11,12 @@ if sys.version.split(" ")[0] < "3.4":
 
 setup(
     name='sexpdata',
-    version='0.0.4.dev1',
+    version='0.0.4',
     py_modules=['sexpdata'],
-    author=sexpdata.__author__,
+    author='Joshua D. Boyd, Takafumi Arakaki',
     author_email='jdboyd@jdboyd.net',
     url='https://github.com/jd-boyd/sexpdata',
-    license=sexpdata.__license__,
+    license='BSD License',
     description='S-expression parser for Python',
     long_description=long_description,
     keywords='s-expression, lisp, parser',
