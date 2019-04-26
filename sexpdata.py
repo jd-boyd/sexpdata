@@ -1,4 +1,5 @@
 # [[[cog import cog; cog.outl('"""\n%s\n"""' % file('README.rst').read()) ]]]
+from __future__ import unicode_literals
 """
 S-expression parser for Python
 ==============================
@@ -72,14 +73,23 @@ __all__ = [
     # Utility functions:
     'car', 'cdr',
     # S-expression classes:
-    'Symbol', 'String', 'Quoted',
+    'Symbol', 'String', 'Quoted', 'Brackets', 'Parens',
 ]
 
 import re
+from collections import namedtuple, Iterable, Mapping
+from itertools import chain
 from string import whitespace
-import functools
 
 BRACKETS = {'(': ')', '[': ']'}
+
+
+### PEP fallbacks
+
+try:
+    from functools import singledispatch
+except ImportError:
+    from singledispatch import singledispatch
 
 
 ### Python 3 compatibility
@@ -88,65 +98,8 @@ try:
     unicode
     PY3 = False
 except NameError:
-    basestring = unicode = str  # Python 3
+    unicode = str  # Python 3
     PY3 = True
-
-
-def uformat(s, *args, **kwds):
-    """Alias of ``unicode(s).format(...)``."""
-    return tounicode(s).format(*args, **kwds)
-
-
-### Utility
-
-def tounicode(string):
-    """
-    Decode `string` if it is not unicode.  Do nothing in Python 3.
-    """
-    if not isinstance(string, unicode):
-        string = unicode(string, 'utf-8')
-    return string
-
-
-def return_as(converter):
-    """
-    Decorator to convert result of a function.
-
-    It is just a function composition. The following two codes are
-    equivalent.
-
-    Using `@return_as`::
-
-        @return_as(converter)
-        def generator(args):
-            ...
-
-        result = generator(args)
-
-    Manually do the same::
-
-        def generator(args):
-            ...
-
-        result = converter(generator(args))
-
-    Example:
-
-    >>> @return_as(list)
-    ... def f():
-    ...     for i in range(3):
-    ...         yield i
-    ...
-    >>> f()  # this gives a list, not an iterator
-    [0, 1, 2]
-
-    """
-    def wrapper(generator):
-        @functools.wraps(generator)
-        def func(*args, **kwds):
-            return converter(generator(*args, **kwds))
-        return func
-    return wrapper
 
 
 ### Interface
@@ -256,12 +209,12 @@ def dump(obj, filelike, **kwds):
 
     >>> import io
     >>> fp = io.StringIO()
-    >>> dump([Symbol('a'), Symbol('b')], fp)
+    >>> dump(('a', 'b'), fp, str_as='symbol')
     >>> print(fp.getvalue())
     (a b)
 
     """
-    filelike.write(unicode(dumps(obj)))
+    filelike.write(dumps(obj, **kwds))
 
 
 def dumps(obj, **kwds):
@@ -293,6 +246,9 @@ def dumps(obj, **kwds):
     (a b)
     >>> print(dumps(dict(a=1)))
     (:a 1)
+    >>> ProperTuple = namedtuple('ProperTuple', 'k')
+    >>> print(dumps(ProperTuple('v')))
+    (:k "v")
     >>> print(dumps([None, True, False, ()]))
     (() t () ())
     >>> print(dumps([None, True, False, ()],
@@ -315,7 +271,7 @@ def dumps(obj, **kwds):
     (a '(b))
 
     """
-    return tosexp(obj, **kwds)
+    return unicode(tosexp(obj, **kwds))
 
 
 def car(obj):
@@ -350,16 +306,15 @@ def cdr(obj):
     # This is very lazy implementation.  Probably the best way to do
     # it is to define `Cons` S-expression class.
     if len(obj) > 2:
-        dot = obj[1]
-        if isinstance(dot, Symbol) and dot.value() == '.':
+        if obj[1] == Symbol('.'):
             return obj[2]
     return obj[1:]
 
 
 ### Core
 
-def tosexp(obj, str_as='string', tuple_as='list',
-           true_as='t', false_as='()', none_as='()'):
+@singledispatch
+def tosexp(obj, **kwds):
     """
     Convert an object to an S-expression (`dumps` is just calling this).
 
@@ -368,89 +323,150 @@ def tosexp(obj, str_as='string', tuple_as='list',
     `Lisp: Common Lisp, Scheme/Racket, Clojure, Emacs Lisp - Hyperpolyglot
     <http://hyperpolyglot.org/lisp>`_
 
+    Most classes can be supported by tosexp() by adding a __to_lisp_as__ method
+    that returns a restructuring of an instance. The method can use builtin
+    types, sexpdata hinting classes, and instances of classes that have
+    tosexp() support.
+
+    Methods that require customizing the recursion or output string of tosexp()
+    should be registered with @sexpdata.tosexp.register(). Also the default
+    handlers can be overridden by re-registration.
+
+    Define tosexp() for a simple immutable Cons class. The dot is formatted
+    rather than doing a 3-tuple w/Symbol('.') hack.
+
+    >>> import sexpdata
+    >>> class Cons(namedtuple('Cons', 'car cdr')):
+    ...     pass
+    >>> @sexpdata.tosexp.register(Cons)
+    ... def _(obj, **kwds):
+    ...     return '({0} . {1})'.format(sexpdata.tosexp(obj.car, **kwds),
+    ...                                 sexpdata.tosexp(obj.cdr, **kwds))
+    ...
+    >>> dumps(Cons(True, False))
+    '(t . ())'
+
+    A simple alist using Cons:
+
+    >>> dumps(map(Cons, 'abcde', range(5)), str_as='symbol')
+    '((a . 0) (b . 1) (c . 2) (d . 3) (e . 4))'
+
+    Overriding the float handler for application-wide formatting:
+
+    >>> @sexpdata.tosexp.register(float)
+    ... def _(obj, **kwds):
+    ...     return '{0:.3}'.format(obj)
+    ...
+    >>> import math
+    >>> tuple(round(math.pi, n) for n in range(5)) # doctest: +SKIP
+    (3.0, 3.1, 3.14, 3.142, 3.1416)
+    >>> dumps(round(math.pi, n) for n in range(5))
+    '(3.0 3.1 3.14 3.14 3.14)'
     """
-    _tosexp = lambda x: tosexp(
-        x, str_as=str_as, tuple_as=tuple_as,
-        true_as=true_as, false_as=false_as, none_as=none_as)
-    if isinstance(obj, list):
-        return Bracket(obj, '(').tosexp(_tosexp)
-    elif isinstance(obj, tuple):
-        if tuple_as == 'list':
-            return Bracket(obj, '(').tosexp(_tosexp)
-        elif tuple_as == 'array':
-            return Bracket(obj, '[').tosexp(_tosexp)
-        else:
-            raise ValueError(uformat("tuple_as={0!r} is not valid", tuple_as))
-    elif obj is True:  # must do this before ``isinstance(obj, int)``
-        return true_as
-    elif obj is False:
-        return false_as
-    elif obj is None:
-        return none_as
-    elif isinstance(obj, (int, float)):
-        return str(obj)
-    elif isinstance(obj, basestring):
-        if str_as == 'symbol':
-            return obj
-        elif str_as == 'string':
-            return String(obj).tosexp()
-        else:
-            raise ValueError(uformat("str_as={0!r} is not valid", str_as))
-    elif isinstance(obj, dict):
-        return _tosexp(dict_to_plist(obj))
-    elif isinstance(obj, SExpBase):
-        return obj.tosexp(_tosexp)
+    if hasattr(obj, '__to_lisp_as__'):
+        return tosexp(obj.__to_lisp_as__(), **kwds)
     else:
-        raise TypeError(uformat(
+        raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
-            "It's value is '{1!r}'", type(obj), obj))
+            "It's value is '{1!r}'".format(type(obj), obj))
 
 
-@return_as(list)
-def dict_to_plist(obj):
-    for key in obj:
-        yield Symbol(uformat(":{0}", key))
-        yield obj[key]
+@tosexp.register(Iterable)
+@tosexp.register(Mapping)
+def _(obj, **kwds):
+    return tosexp(Parens(obj), **kwds)
 
 
-class SExpBase(object):
+@tosexp.register(tuple)
+def _(obj, tuple_as='list', **kwds):
+    kwds['tuple_as'] = tuple_as
+    if hasattr(obj, '__to_lisp_as__'):
+        return tosexp(obj.__to_lisp_as__(), **kwds)
+    elif hasattr(obj, '_asdict'):
+        return tosexp(Parens(obj._asdict()), **kwds)
+    elif tuple_as == 'list':
+        return tosexp(Parens(obj), **kwds)
+    elif tuple_as == 'array':
+        return tosexp(Brackets(obj), **kwds)
+    else:
+        raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
 
-    def __init__(self, val):
-        self._val = val
 
-    def __repr__(self):
-        return uformat("{0}({1!r})", self.__class__.__name__, self._val)
+@tosexp.register(unicode)
+def _(obj, str_as='string', **kwds):
+    kwds['str_as'] = str_as
+    if str_as == 'symbol':
+        return obj
+    elif str_as == 'string':
+        return tosexp(String(obj))
+    else:
+        raise ValueError('str_as={0!r} is not valid'.format(str_as))
+
+
+@tosexp.register(type(None))
+def _(obj, none_as='()', **kwds):
+    return none_as
+
+
+@tosexp.register(bool)
+def _(obj, false_as='()', true_as='t', **kwds):
+    return true_as if obj else false_as
+
+
+@tosexp.register(float)
+@tosexp.register(int)
+def _(obj, **kwds):
+    return str(obj)
+
+
+class String(unicode):
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self._val == other._val
-        else:
-            return False
-
-    def value(self):
-        return self._val
-
-    def tosexp(self, tosexp=tosexp):
         """
-        Decode this object into an S-expression string.
-
-        :arg tosexp: A function to be used when converting sub S-expression.
-
+        >>> from itertools import permutations
+        >>> S = 'a', String('a'), Symbol('a')
+        >>> all(x == x for x in S)
+        True
+        >>> any(x != x for x in S)
+        False
+        >>> any(x == y for x, y in permutations(S, 2))
+        False
+        >>> all(x != y for x, y in permutations(S, 2))
+        True
         """
-        raise NotImplementedError
+        return (self.__class__ == other.__class__ and
+                unicode.__eq__(self, other))
+
+    def __ne__(self, other):
+        return not self == other
+
+    _lisp_quoted_specials = [  # from Pymacs
+        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
+        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
+        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
+
+    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
+
+    def __repr__(self):
+        return '{0}({1})'.format(self.__class__.__name__,
+                                 unicode.__repr__(self))
 
     @classmethod
     def quote(cls, string):
         for (s, q) in cls._lisp_quoted_specials:
             string = string.replace(s, q)
-        return tounicode(string)
+        return string
 
     @classmethod
     def unquote(cls, string):
         return cls._lisp_quoted_to_raw.get(string, string)
 
+@tosexp.register(String)
+def _(obj, **kwds):
+    return '"' + String.quote(obj) + '"'
 
-class Symbol(SExpBase):
+
+class Symbol(String):
 
     _lisp_quoted_specials = [
         ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
@@ -462,78 +478,117 @@ class Symbol(SExpBase):
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
-    def tosexp(self, tosexp=None):
-        return self.quote(self._val)
+@tosexp.register(Symbol)
+def _(obj, **kwds):
+    return Symbol.quote(obj)
 
 
-class String(SExpBase):
-
-    _lisp_quoted_specials = [  # from Pymacs
-        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
-        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
-        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
-
-    _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
-
-    def tosexp(self, tosexp=None):
-        return uformat('"{0}"', self.quote(self._val))
-
-
-class Quoted(SExpBase):
-
-    def tosexp(self, tosexp=tosexp):
-        return uformat("'{0}", tosexp(self._val))
-
-
-class Bracket(SExpBase):
-
-    def __init__(self, val, bra):
-        assert bra in BRACKETS  # FIXME: raise an appropriate error
-        super(Bracket, self).__init__(val)
-        self._bra = bra
+class Quoted(namedtuple('Quoted', 'x')):
 
     def __repr__(self):
-        return uformat("{0}({1!r}, {2!r})",
-            self.__class__.__name__, self._val, self._bra)
+        return '{0.__class__.__name__}({0.x!r})'.format(self)
 
-    def tosexp(self, tosexp=tosexp):
-        bra = self._bra
-        ket = BRACKETS[self._bra]
-        c = ' '.join(tosexp(v) for v in self._val)
-        return uformat("{0}{1}{2}", bra, c, ket)
+@tosexp.register(Quoted)
+def _(obj, **kwds):
+    return "'" + tosexp(obj.x, **kwds)
+
+
+class Delimiters(namedtuple('Delimiters', 'I')):
+
+    def __new__(cls, *args):
+        if not args:
+            raise ValueError("Expected an Iterable/Mapping argument or *args")
+        x = args[0] if len(args) == 1 else args
+
+        if isinstance(x, Mapping):
+            plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
+            return tuple.__new__(cls, (chain.from_iterable(plist_pairs),))
+        elif not isinstance(x, (unicode, bytes)) and isinstance(x, Iterable):
+            return tuple.__new__(cls, (x,))
+        else:
+            return tuple.__new__(cls, ((x,),)) # unary *args
+
+    @staticmethod
+    def from_opener(opener, val):
+        cls_map = dict((cls.opener, cls) for cls in Delimiters.__subclasses__())
+        if opener in cls_map.keys():
+            return cls_map[opener](val)
+        else:
+            raise TypeError
+
+@tosexp.register(Delimiters)
+def _(self, **kwds):
+    return (self.__class__.opener +
+            ' '.join(tosexp(x, **kwds) for x in self.I) +
+            self.__class__.closer)
+
+
+class Brackets(Delimiters):
+    """
+    Outputs an Iterable or Mapping with square brackets.
+
+    Selectively make a container an array:
+
+    >>> dumps(Brackets(list(range(5))))
+    '[0 1 2 3 4]'
+
+    >>> dumps(Brackets(dict(a=1)))
+    '[:a 1]'
+    """
+
+    opener, closer = '[', ']'
+
+
+class Parens(Delimiters):
+    """
+    Outputs an Iterable or Mapping with parentheses.
+
+    By default Iterables and Mappings output with parentheses.
+
+    >>> dumps(range(5))
+    '(0 1 2 3 4)'
+    >>> dumps(dict(a=1))
+    '(:a 1)'
+
+    Selectively override the tuple_as='array' default parameter:
+
+    >>> dumps((0, Parens((1, 2, 3)), 4), tuple_as='array')
+    '[0 (1 2 3) 4]'
+    """
+
+    opener, closer = '(', ')'
 
 
 def bracket(val, bra):
     if bra == '(':
         return val
     else:
-        return Bracket(val, bra)
+        return Delimiters.from_opener(bra, val)
 
 
 class ExpectClosingBracket(Exception):
 
     def __init__(self, got, expect):
-        super(ExpectClosingBracket, self).__init__(uformat(
+        super(ExpectClosingBracket, self).__init__(
             "Not enough closing brackets. "
             "Expected {0!r} to be the last letter in the sexp. "
-            "Got: {1!r}", expect, got))
+            "Got: {1!r}".format(expect, got))
 
 
 class ExpectNothing(Exception):
 
     def __init__(self, got):
-        super(ExpectNothing, self).__init__(uformat(
+        super(ExpectNothing, self).__init__(
             "Too many closing brackets. "
             "Expected no character left in the sexp. "
-            "Got: {0!r}", got))
-
+            "Got: {0!r}".format(got))
 
 class ExpectSExp(Exception):
 
     def __init__(self, pos):
-        super(ExpectSExp, self).__init__(uformat(
+        super(ExpectSExp, self).__init__(
             'No s-exp is found after an apostrophe'
-            ' at position {0}', pos))
+            ' at position {0}'.format(pos))
 
 
 class Parser(object):

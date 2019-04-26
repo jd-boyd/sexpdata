@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 from sexpdata import (
     PY3,
@@ -7,18 +8,6 @@ from sexpdata import (
 )
 import unittest
 from nose.tools import eq_, raises, assert_raises
-
-
-### Python 3 compatibility
-
-if PY3:
-    utf8 = lambda s: s
-else:
-    utf8 = lambda s: s.decode('utf-8')
-
-utf8.__doc__ = """
-Decode a raw string into unicode object.  Do nothing in Python 3.
-"""
 
 
 ### Test utils
@@ -57,7 +46,7 @@ data_identity = [
     Symbol(r'path.join'),
     Symbol(r'path join'),
     Symbol(r'path\join'),
-    utf8("日本語能力!!ソﾊﾝｶｸ"),
+    "日本語能力!!ソﾊﾝｶｸ",
 ]
 
 data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
@@ -108,27 +97,27 @@ class TestParseFluctuation(BaseTestCase):
 
 class TestUnicode(BaseTestCase):
 
-    ustr = utf8("日本語能力!!ソﾊﾝｶｸ")
+    ustr = "日本語能力!!ソﾊﾝｶｸ"
 
-    if not PY3:
+#    if not PY3:
         # Let's not support dumping/parsing bytes.
         # (In Python 3, ``string.encode()`` returns bytes.)
 
-        def test_dump_raw_utf8(self):
-            """
-            Test that sexpdata supports dumping encoded (raw) string.
+    def test_dump_raw_utf8(self):
+        """
+        Test that sexpdata supports dumping encoded (raw) string.
 
-            See also: https://github.com/tkf/emacs-jedi/issues/43
+        See also: https://github.com/tkf/emacs-jedi/issues/43
 
-            """
-            ustr = self.ustr
-            sexp = utf8('"{0}"').format(ustr)
-            self.assertEqual(tosexp(ustr.encode('utf-8')), sexp)
+        """
+        ustr = self.ustr
+        sexp = '"{0}"'.format(ustr)
+        self.assertEqual(tosexp(ustr), sexp)
 
-        def test_parse_raw_utf8(self):
-            ustr = self.ustr
-            sexp = utf8('"{0}"').format(ustr)
-            self.assert_parse(sexp.encode('utf-8'), ustr.encode('utf-8'))
+    def test_parse_raw_utf8(self):
+        ustr = self.ustr
+        sexp = '"{0}"'.format(ustr)
+        self.assert_parse(sexp, ustr)
 
 
 def test_tosexp_str_as():
@@ -151,6 +140,13 @@ def test_tosexp_tuple_as():
     yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '(["a" "b"])')
     yield (eq_, tosexp(Quoted(('a',))), '\'("a")')
     yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'["a"]')
+
+
+@raises(ValueError)
+def test_tosexp_value_errors():
+    tosexp((), tuple_as='')
+    tosexp('', str_as='')
+    tosexp(Parens())
 
 
 @raises(ExpectNothing)
