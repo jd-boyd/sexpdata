@@ -61,6 +61,13 @@ def test_identity():
     for data in data_identity:
         yield (check_identity, data)
 
+def check_identity_pretty_print(obj):
+    eq_(parse(tosexp(obj, pretty_print=True))[0], obj)
+
+def test_identity_pretty_print():
+    for data in data_identity:
+        yield (check_identity_pretty_print, data)
+
 
 class BaseTestCase(unittest.TestCase):
 
