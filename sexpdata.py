@@ -77,7 +77,7 @@ __all__ = [
 ]
 
 import re
-from collections import namedtuple, Iterable, Mapping
+from collections import namedtuple, Iterable, Mapping, Sequence
 from itertools import chain
 from string import whitespace
 
@@ -502,11 +502,13 @@ class Delimiters(namedtuple('Delimiters', 'I')):
 
         if isinstance(x, Mapping):
             plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
-            return tuple.__new__(cls, (chain.from_iterable(plist_pairs),))
-        elif not isinstance(x, (unicode, bytes)) and isinstance(x, Iterable):
-            return tuple.__new__(cls, (x,))
-        else:
+            return tuple.__new__(cls, (tuple(chain.from_iterable(plist_pairs)),))
+        elif isinstance(x, (unicode, bytes)) or not isinstance(x, Iterable):
             return tuple.__new__(cls, ((x,),)) # unary *args
+        elif isinstance(x, Sequence):
+            return tuple.__new__(cls, (x,))
+        else: # isinstance(x, Iterable)
+            return tuple.__new__(cls, (tuple(x),))
 
     @staticmethod
     def from_opener(opener, val):
