@@ -77,7 +77,7 @@ __all__ = [
 ]
 
 import re
-from collections import namedtuple, Iterable, Mapping
+from collections import namedtuple, Iterable, Mapping, Sequence
 from itertools import chain
 from string import whitespace
 
@@ -237,6 +237,12 @@ def dumps(obj, **kwds):
     :type      none_as: str
     :keyword   none_as: How None should be interpreted.
                         Default is ``'()'``
+    :type     pretty_print: bool
+    :keyword  pretty_print: Format output as a tree.
+                           Default is ``False``
+    :type     indent_as: str
+    :keyword  indent_as: String to use for each level of tree indentation.
+                         Default is ``'  '``
 
     Basic usage:
 
@@ -502,11 +508,13 @@ class Delimiters(namedtuple('Delimiters', 'I')):
 
         if isinstance(x, Mapping):
             plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
-            return tuple.__new__(cls, (chain.from_iterable(plist_pairs),))
-        elif not isinstance(x, (unicode, bytes)) and isinstance(x, Iterable):
-            return tuple.__new__(cls, (x,))
-        else:
+            return tuple.__new__(cls, (tuple(chain.from_iterable(plist_pairs)),))
+        elif isinstance(x, (unicode, bytes)) or not isinstance(x, Iterable):
             return tuple.__new__(cls, ((x,),)) # unary *args
+        elif isinstance(x, Sequence):
+            return tuple.__new__(cls, (x,))
+        else: # isinstance(x, Iterable)
+            return tuple.__new__(cls, (tuple(x),))
 
     @staticmethod
     def from_opener(opener, val):
@@ -518,9 +526,27 @@ class Delimiters(namedtuple('Delimiters', 'I')):
 
 @tosexp.register(Delimiters)
 def _(self, **kwds):
+    # Don't break up expressions produced by certain overloads of tosexp
+    dont_break = all(tosexp.dispatch(type(x)) not in DONT_BREAK_OVERLOADS for x in self.I)
+
+    if "pretty_print" in kwds and kwds["pretty_print"] and not dont_break:
+        expr_separator = "\n"
+        exprs_indent = kwds["indent_as"] if "indent_as" in kwds else "  "
+        exprs_separator = "\n"
+    else:
+        expr_separator = " "
+        exprs_indent = ""
+        exprs_separator = ""
+
+    exprs = expr_separator.join(tosexp(x, **kwds) for x in self.I)
+    indented_exprs = "".join(exprs_indent + line for line in exprs.splitlines(True))
+
     return (self.__class__.opener +
-            ' '.join(tosexp(x, **kwds) for x in self.I) +
+            exprs_separator +
+            indented_exprs +
+            exprs_separator +
             self.__class__.closer)
+DONT_BREAK_OVERLOADS = [tosexp.dispatch(c) for c in (object, Iterable, Mapping, tuple, Delimiters)]
 
 
 class Brackets(Delimiters):
