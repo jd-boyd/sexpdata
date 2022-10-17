@@ -77,7 +77,12 @@ __all__ = [
 ]
 
 import re
-from collections import namedtuple, Iterable, Mapping, Sequence
+from collections import namedtuple
+try:
+    from collections.abc import Iterable, Mapping, Sequence
+except ImportError:
+    # Python < 3.3
+    from collections import Iterable, Mapping, Sequence
 from itertools import chain
 from string import whitespace
 
