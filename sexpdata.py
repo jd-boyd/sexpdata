@@ -451,6 +451,14 @@ class String(unicode):
     def __ne__(self, other):
         return not self == other
 
+    def __hash__(self):
+        """
+        >>> D = {'a': 1, String('a'): 2, Symbol('a'): 3}
+        >>> len(D)
+        3
+        """
+        return unicode.__hash__(self)
+
     _lisp_quoted_specials = [  # from Pymacs
         ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
         ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
