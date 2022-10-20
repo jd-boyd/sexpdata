@@ -88,6 +88,17 @@ class TestSymbol(BaseTestCase):
                   r'\ ', r'\.', r'\,', r'\?', r'\;', r'\#']:
             self.assert_parse(s, Symbol(Symbol.unquote(s)))
 
+    def test_hashable_and_distinct(self):
+        d = {
+            String("A"): "StrA",
+            Symbol("A"): "SymA",
+            "A": "strA",
+        }
+        self.assertEqual(3, len(d))
+        self.assertEqual("StrA", d[String("A")])
+        self.assertEqual("SymA", d[Symbol("A")])
+        self.assertEqual("strA", d["A"])
+
 
 class TestParseFluctuation(BaseTestCase):
 
