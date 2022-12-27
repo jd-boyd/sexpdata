@@ -4,10 +4,11 @@ from __future__ import unicode_literals
 from sexpdata import (
     PY3,
     ExpectClosingBracket, ExpectNothing, ExpectSExp,
-    parse, tosexp, Symbol, String, Quoted, bracket,
+    parse, tosexp, Symbol, String, Quoted, bracket, Parens,
 )
 import unittest
-from nose.tools import raises, assert_raises
+
+import pytest
 
 
 ### Test utils
@@ -160,21 +161,23 @@ def test_tosexp_tuple_as():
     assert tosexp(Quoted(('a',)), tuple_as='array') == '\'["a"]'
 
 
-@raises(ValueError)
 def test_tosexp_value_errors():
-    tosexp((), tuple_as='')
-    tosexp('', str_as='')
-    tosexp(Parens())
+    with pytest.raises(ValueError):
+        tosexp((), tuple_as='')
+    with pytest.raises(ValueError):
+        tosexp('', str_as='')
+    with pytest.raises(ValueError):
+        tosexp(Parens())
 
 
-@raises(ExpectNothing)
 def test_too_many_brackets():
-    parse("(a b))")
+    with pytest.raises(ExpectNothing):
+        parse("(a b))")
 
 
-@raises(ExpectClosingBracket)
 def test_not_enough_brackets():
-    parse("(a (b)")
+    with pytest.raises(ExpectClosingBracket):
+        parse("(a (b)")
 
 
 def test_no_eol_after_comment():
@@ -189,13 +192,11 @@ def test_issue_4():
 def test_issue_18():
     import sexpdata
     sexp = "(foo)'   "
-    with assert_raises(ExpectSExp) as raised:
+    with pytest.raises(ExpectSExp, match='No s-exp is found after an '
+                                         'apostrophe at position 5'):
         sexpdata.parse(sexp)
-    msg = raised.exception.args[0]
-    assert msg == 'No s-exp is found after an apostrophe at position 5'
 
     sexp = "'   "
-    with assert_raises(ExpectSExp) as raised:
+    with pytest.raises(ExpectSExp, match='No s-exp is found after an '
+                                         'apostrophe at position 0'):
         sexpdata.parse(sexp)
-    msg = raised.exception.args[0]
-    assert msg == 'No s-exp is found after an apostrophe at position 0'
