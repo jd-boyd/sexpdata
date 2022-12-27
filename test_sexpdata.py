@@ -11,12 +11,6 @@ import unittest
 import pytest
 
 
-### Test utils
-
-def compare_parsed(sexp, obj):
-    assert parse(sexp) == obj
-
-
 ### Test cases
 
 data_identity = [
@@ -54,20 +48,14 @@ data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
 data_identity += map(lambda x: x[1], String._lisp_quoted_specials)
 
 
-def check_identity(obj):
-    assert parse(tosexp(obj))[0] == obj
-
-
 def test_identity():
     for data in data_identity:
-        yield (check_identity, data)
+        assert parse(tosexp(data))[0] == data
 
-def check_identity_pretty_print(obj):
-    assert parse(tosexp(obj, pretty_print=True))[0] == obj
 
 def test_identity_pretty_print():
     for data in data_identity:
-        yield (check_identity_pretty_print, data)
+        assert parse(tosexp(data, pretty_print=True))[0] == data
 
 
 class BaseTestCase(unittest.TestCase):
@@ -185,8 +173,8 @@ def test_no_eol_after_comment():
 
 
 def test_issue_4():
-    yield (compare_parsed, "(0 ;; (\n)", [[0]])
-    yield (compare_parsed, "(0;; (\n)", [[0]])
+    assert parse("(0 ;; (\n)") == [[0]]
+    assert parse("(0;; (\n)") == [[0]]
 
 
 def test_issue_18():
