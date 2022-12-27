@@ -32,5 +32,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - run: python setup.py install
-      - run: pip install nose
-      - run: nosetests --with-doctest
+      - run: pip install nose pytest
+      - run: pytest --doctest-modules sexpdata.py test_sexpdata.py
