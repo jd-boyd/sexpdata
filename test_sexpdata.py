@@ -7,13 +7,13 @@ from sexpdata import (
     parse, tosexp, Symbol, String, Quoted, bracket,
 )
 import unittest
-from nose.tools import eq_, raises, assert_raises
+from nose.tools import raises, assert_raises
 
 
 ### Test utils
 
 def compare_parsed(sexp, obj):
-    eq_(parse(sexp), obj)
+    assert parse(sexp) == obj
 
 
 ### Test cases
@@ -54,7 +54,7 @@ data_identity += map(lambda x: x[1], String._lisp_quoted_specials)
 
 
 def check_identity(obj):
-    eq_(parse(tosexp(obj))[0], obj)
+    assert parse(tosexp(obj))[0] == obj
 
 
 def test_identity():
@@ -62,7 +62,7 @@ def test_identity():
         yield (check_identity, data)
 
 def check_identity_pretty_print(obj):
-    eq_(parse(tosexp(obj, pretty_print=True))[0], obj)
+    assert parse(tosexp(obj, pretty_print=True))[0] == obj
 
 def test_identity_pretty_print():
     for data in data_identity:
@@ -139,25 +139,25 @@ class TestUnicode(BaseTestCase):
 
 
 def test_tosexp_str_as():
-    yield (eq_, tosexp('a', str_as='symbol'), 'a')
-    yield (eq_, tosexp(['a'], str_as='symbol'), '(a)')
-    yield (eq_, tosexp('a'), '"a"')
-    yield (eq_, tosexp(['a']), '("a")')
-    yield (eq_, tosexp(Quoted('a')), '\'"a"')
-    yield (eq_, tosexp(Quoted(['a']), str_as='symbol'), '\'(a)')
-    yield (eq_, tosexp([Quoted('a')], str_as='symbol'), '(\'a)')
-    yield (eq_, tosexp(Quoted('a'), str_as='symbol'), '\'a')
-    yield (eq_, tosexp(Quoted(['a'])), '\'("a")')
-    yield (eq_, tosexp([Quoted('a')]), '(\'"a")')
+    assert tosexp('a', str_as='symbol') == 'a'
+    assert tosexp(['a'], str_as='symbol') == '(a)'
+    assert tosexp('a') == '"a"'
+    assert tosexp(['a']) == '("a")'
+    assert tosexp(Quoted('a')) == '\'"a"'
+    assert tosexp(Quoted(['a']), str_as='symbol') == '\'(a)'
+    assert tosexp([Quoted('a')], str_as='symbol') == '(\'a)'
+    assert tosexp(Quoted('a'), str_as='symbol') == '\'a'
+    assert tosexp(Quoted(['a'])) == '\'("a")'
+    assert tosexp([Quoted('a')]) == '(\'"a")'
 
 
 def test_tosexp_tuple_as():
-    yield (eq_, tosexp(('a', 'b')), '("a" "b")')
-    yield (eq_, tosexp(('a', 'b'), tuple_as='array'), '["a" "b"]')
-    yield (eq_, tosexp([('a', 'b')]), '(("a" "b"))')
-    yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '(["a" "b"])')
-    yield (eq_, tosexp(Quoted(('a',))), '\'("a")')
-    yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'["a"]')
+    assert tosexp(('a', 'b')) == '("a" "b")'
+    assert tosexp(('a', 'b'), tuple_as='array') == '["a" "b"]'
+    assert tosexp([('a', 'b')]) == '(("a" "b"))'
+    assert tosexp([('a', 'b')], tuple_as='array') == '(["a" "b"])'
+    assert tosexp(Quoted(('a',))) == '\'("a")'
+    assert tosexp(Quoted(('a',)), tuple_as='array') == '\'["a"]'
 
 
 @raises(ValueError)
@@ -178,7 +178,7 @@ def test_not_enough_brackets():
 
 
 def test_no_eol_after_comment():
-    eq_(parse('a ; comment'), [Symbol('a')])
+    assert parse('a ; comment') == [Symbol('a')]
 
 
 def test_issue_4():
@@ -192,10 +192,10 @@ def test_issue_18():
     with assert_raises(ExpectSExp) as raised:
         sexpdata.parse(sexp)
     msg = raised.exception.args[0]
-    eq_(msg, 'No s-exp is found after an apostrophe at position 5')
+    assert msg == 'No s-exp is found after an apostrophe at position 5'
 
     sexp = "'   "
     with assert_raises(ExpectSExp) as raised:
         sexpdata.parse(sexp)
     msg = raised.exception.args[0]
-    eq_(msg, 'No s-exp is found after an apostrophe at position 0')
+    assert msg == 'No s-exp is found after an apostrophe at position 0'
