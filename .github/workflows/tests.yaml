@@ -29,6 +29,5 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-      - run: python setup.py install
-      - run: pip install pytest
+      - run: pip install . pytest
       - run: pytest --doctest-modules sexpdata.py test_sexpdata.py
