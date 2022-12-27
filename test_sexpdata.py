@@ -4,16 +4,11 @@ from __future__ import unicode_literals
 from sexpdata import (
     PY3,
     ExpectClosingBracket, ExpectNothing, ExpectSExp,
-    parse, tosexp, Symbol, String, Quoted, bracket,
+    parse, tosexp, Symbol, String, Quoted, bracket, Parens,
 )
 import unittest
-from nose.tools import eq_, raises, assert_raises
 
-
-### Test utils
-
-def compare_parsed(sexp, obj):
-    eq_(parse(sexp), obj)
+import pytest
 
 
 ### Test cases
@@ -53,20 +48,14 @@ data_identity += map(lambda x: x[0], String._lisp_quoted_specials)
 data_identity += map(lambda x: x[1], String._lisp_quoted_specials)
 
 
-def check_identity(obj):
-    eq_(parse(tosexp(obj))[0], obj)
-
-
 def test_identity():
     for data in data_identity:
-        yield (check_identity, data)
+        assert parse(tosexp(data))[0] == data
 
-def check_identity_pretty_print(obj):
-    eq_(parse(tosexp(obj, pretty_print=True))[0], obj)
 
 def test_identity_pretty_print():
     for data in data_identity:
-        yield (check_identity_pretty_print, data)
+        assert parse(tosexp(data, pretty_print=True))[0] == data
 
 
 class BaseTestCase(unittest.TestCase):
@@ -139,63 +128,63 @@ class TestUnicode(BaseTestCase):
 
 
 def test_tosexp_str_as():
-    yield (eq_, tosexp('a', str_as='symbol'), 'a')
-    yield (eq_, tosexp(['a'], str_as='symbol'), '(a)')
-    yield (eq_, tosexp('a'), '"a"')
-    yield (eq_, tosexp(['a']), '("a")')
-    yield (eq_, tosexp(Quoted('a')), '\'"a"')
-    yield (eq_, tosexp(Quoted(['a']), str_as='symbol'), '\'(a)')
-    yield (eq_, tosexp([Quoted('a')], str_as='symbol'), '(\'a)')
-    yield (eq_, tosexp(Quoted('a'), str_as='symbol'), '\'a')
-    yield (eq_, tosexp(Quoted(['a'])), '\'("a")')
-    yield (eq_, tosexp([Quoted('a')]), '(\'"a")')
+    assert tosexp('a', str_as='symbol') == 'a'
+    assert tosexp(['a'], str_as='symbol') == '(a)'
+    assert tosexp('a') == '"a"'
+    assert tosexp(['a']) == '("a")'
+    assert tosexp(Quoted('a')) == '\'"a"'
+    assert tosexp(Quoted(['a']), str_as='symbol') == '\'(a)'
+    assert tosexp([Quoted('a')], str_as='symbol') == '(\'a)'
+    assert tosexp(Quoted('a'), str_as='symbol') == '\'a'
+    assert tosexp(Quoted(['a'])) == '\'("a")'
+    assert tosexp([Quoted('a')]) == '(\'"a")'
 
 
 def test_tosexp_tuple_as():
-    yield (eq_, tosexp(('a', 'b')), '("a" "b")')
-    yield (eq_, tosexp(('a', 'b'), tuple_as='array'), '["a" "b"]')
-    yield (eq_, tosexp([('a', 'b')]), '(("a" "b"))')
-    yield (eq_, tosexp([('a', 'b')], tuple_as='array'), '(["a" "b"])')
-    yield (eq_, tosexp(Quoted(('a',))), '\'("a")')
-    yield (eq_, tosexp(Quoted(('a',)), tuple_as='array'), '\'["a"]')
+    assert tosexp(('a', 'b')) == '("a" "b")'
+    assert tosexp(('a', 'b'), tuple_as='array') == '["a" "b"]'
+    assert tosexp([('a', 'b')]) == '(("a" "b"))'
+    assert tosexp([('a', 'b')], tuple_as='array') == '(["a" "b"])'
+    assert tosexp(Quoted(('a',))) == '\'("a")'
+    assert tosexp(Quoted(('a',)), tuple_as='array') == '\'["a"]'
 
 
-@raises(ValueError)
 def test_tosexp_value_errors():
-    tosexp((), tuple_as='')
-    tosexp('', str_as='')
-    tosexp(Parens())
+    with pytest.raises(ValueError):
+        tosexp((), tuple_as='')
+    with pytest.raises(ValueError):
+        tosexp('', str_as='')
+    with pytest.raises(ValueError):
+        tosexp(Parens())
 
 
-@raises(ExpectNothing)
 def test_too_many_brackets():
-    parse("(a b))")
+    with pytest.raises(ExpectNothing):
+        parse("(a b))")
 
 
-@raises(ExpectClosingBracket)
 def test_not_enough_brackets():
-    parse("(a (b)")
+    with pytest.raises(ExpectClosingBracket):
+        parse("(a (b)")
 
 
 def test_no_eol_after_comment():
-    eq_(parse('a ; comment'), [Symbol('a')])
+    assert parse('a ; comment') == [Symbol('a')]
 
 
 def test_issue_4():
-    yield (compare_parsed, "(0 ;; (\n)", [[0]])
-    yield (compare_parsed, "(0;; (\n)", [[0]])
+    assert parse("(0 ;; (\n)") == [[0]]
+    assert parse("(0;; (\n)") == [[0]]
 
 
 def test_issue_18():
     import sexpdata
     sexp = "(foo)'   "
-    with assert_raises(ExpectSExp) as raised:
+    with pytest.raises(ExpectSExp, match='No s-exp is found after an '
+                                         'apostrophe at position 5'):
         sexpdata.parse(sexp)
-    msg = raised.exception.args[0]
-    eq_(msg, 'No s-exp is found after an apostrophe at position 5')
 
     sexp = "'   "
-    with assert_raises(ExpectSExp) as raised:
+    with pytest.raises(ExpectSExp, match='No s-exp is found after an '
+                                         'apostrophe at position 0'):
         sexpdata.parse(sexp)
-    msg = raised.exception.args[0]
-    eq_(msg, 'No s-exp is found after an apostrophe at position 0')
