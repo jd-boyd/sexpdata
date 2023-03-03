@@ -23,12 +23,12 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'sexpdata'
-copyright = u'2012, Takafumi Arakaki'
+copyright = u'Takafumi Arakaki, Joshua D. Boyd, others (see commit history)'
 
 # The short X.Y version.
-version = '0.0.4'
+version = '1.0'
 # The full version, including alpha/beta/rc tags.
-release = '0.0.4.dev1'
+release = '1.0.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
