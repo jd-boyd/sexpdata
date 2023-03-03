@@ -5,10 +5,6 @@ from distutils.core import setup
 with open('README.rst') as f:
     long_description = f.read()
 
-install_requires = []
-if sys.version.split(" ")[0] < "3.4":
-    install_requires.append('singledispatch')
-
 setup(
     name='sexpdata',
     version='0.0.4',
@@ -36,5 +32,7 @@ setup(
         "Programming Language :: Emacs-Lisp",
         # see: http://pypi.python.org/pypi?%3Aaction=list_classifiers
     ],
-    install_requires=install_requires,
+    install_requires=[
+        "singledispatch; python_version < '3.4'",
+    ],
 )
