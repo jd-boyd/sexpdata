@@ -480,6 +480,10 @@ class String(unicode):
     def unquote(cls, string):
         return cls._lisp_quoted_to_raw.get(string, string)
 
+    def value(self):
+        return unicode(self)
+
+
 @tosexp.register(String)
 def _(obj, **kwds):
     return '"' + String.quote(obj) + '"'

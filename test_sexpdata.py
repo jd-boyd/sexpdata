@@ -188,3 +188,9 @@ def test_issue_18():
     with pytest.raises(ExpectSExp, match='No s-exp is found after an '
                                          'apostrophe at position 0'):
         sexpdata.parse(sexp)
+
+
+def test_issue_37_value_field():
+    assert String('ObjStr').value() == 'ObjStr'
+    assert Symbol('ObjSym').value() == 'ObjSym'
+    assert Symbol('ObjList').value() == 'ObjList'
