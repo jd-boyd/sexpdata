@@ -29,6 +29,7 @@ data_identity = [
     [Symbol('a'), Quoted([Symbol('b')]), Symbol('c')],
     [Symbol('a'), Quoted(Symbol('b')), Quoted(Symbol('c')), Symbol('d')],
     [Symbol('a'), Quoted(Symbol('b')), Symbol('c'), Quoted(Symbol('d'))],
+    [Symbol('set'), Symbol("set\'")],
     [bracket([1, 2, 3], '[')],
     [bracket([1, [2, bracket([3], '[')]], '[')],
     '""',
