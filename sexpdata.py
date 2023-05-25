@@ -638,7 +638,7 @@ class Parser(object):
 
     closing_brackets = set(BRACKETS.values())
     _atom_end_basic = \
-        set(BRACKETS) | set(closing_brackets) | set('"\'') | set(whitespace)
+        set(BRACKETS) | set(closing_brackets) | set('"') | set(whitespace)
     _atom_end_basic_or_escape_regexp = "|".join(map(re.escape,
                                                     _atom_end_basic | set('\\')))
     quote_or_escape_re = re.compile(r'"|\\')
