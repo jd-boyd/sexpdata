@@ -86,8 +86,6 @@ except ImportError:
 from itertools import chain
 from string import whitespace
 
-BRACKETS = {'(': ')', '[': ']'}
-
 
 ### PEP fallbacks
 
@@ -541,6 +539,10 @@ class Delimiters(namedtuple('Delimiters', 'I')):
         else:
             raise TypeError
 
+    @staticmethod
+    def get_brackets():
+        return {cls.opener: cls.closer for cls in Delimiters.__subclasses__()}
+
 @tosexp.register(Delimiters)
 def _(self, **kwds):
     # Don't break up expressions produced by certain overloads of tosexp
@@ -636,12 +638,11 @@ class ExpectSExp(Exception):
 
 class Parser(object):
 
-    closing_brackets = set(BRACKETS.values())
-    _atom_end_basic = \
-        set(BRACKETS) | set(closing_brackets) | set('"') | set(whitespace)
-    _atom_end_basic_or_escape_regexp = "|".join(map(re.escape,
-                                                    _atom_end_basic | set('\\')))
-    quote_or_escape_re = re.compile(r'"|\\')
+    brackets: dict
+    closing_brackets: set
+    _atom_end_basic: set
+    _atom_end_basic_or_escape_regexp: str
+
 
     def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
                  line_comment=';'):
@@ -651,10 +652,21 @@ class Parser(object):
         self.false = false
         self.string_to = (lambda x: x) if string_to is None else string_to
         self.line_comment = line_comment
+
+        # Compute brackets from delimiter
+        self.brackets = Delimiters.get_brackets()
+        self.closing_brackets = set(self.brackets.values())
+        self._atom_end_basic = \
+            set(self.brackets) | set(self.closing_brackets) | \
+            set('"') | set(whitespace)
+        self._atom_end_basic_or_escape_regexp = "|".join(map(re.escape,
+                                                         self._atom_end_basic | set('\\')))
+        self.quote_or_escape_re = re.compile(r'"|\\')
         self.atom_end = set([line_comment]) | self._atom_end_basic
         self.atom_end_or_escape_re = \
             re.compile("{0}|{1}".format(self._atom_end_basic_or_escape_regexp,
                                         re.escape(line_comment)))
+
 
     def parse_str(self, i):
         string = self.string
@@ -734,8 +746,8 @@ class Parser(object):
             elif c in whitespace:
                 i += 1
                 continue
-            elif c in BRACKETS:
-                close = BRACKETS[c]
+            elif c in self.brackets:
+                close = self.brackets[c]
                 (i, subsexp) = self.parse_sexp(i + 1)
                 append(bracket(subsexp, c))
                 try:
