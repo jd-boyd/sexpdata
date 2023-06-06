@@ -20,6 +20,19 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        exclude:
+          # Macos runner is slowest, so reduce how many of the cases
+          # it does.
+          - os: macos-latest
+            python-version: 'pypy-3.8'
+          - os: macos-latest
+            python-version: 'pypy-3.9'
+          - os: macos-latest
+            python-version: 3.8
+          - os: macos-latest
+            python-version: 3.9
+          - os: macos-latest
+            python-version: "3.10"
     runs-on:  ${{ matrix.os }}
     name: ${{ matrix.os }} @ ${{ matrix.python-version }}
     steps:
