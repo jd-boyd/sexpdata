@@ -239,6 +239,13 @@ def test_issue_18():
         sexpdata.parse(sexp)
 
 
+def test_other_issue_18():
+    import sexpdata
+    sexp = b"(foo)'   "
+    with pytest.raises(AssertionError):
+        sexpdata.loads(sexp)
+
+
 def test_issue_37_value_field():
     assert String('ObjStr').value() == 'ObjStr'
     assert Symbol('ObjSym').value() == 'ObjSym'
