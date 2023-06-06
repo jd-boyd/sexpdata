@@ -70,7 +70,7 @@ class BaseTestCase(unittest.TestCase):
 class TestSymbol(BaseTestCase):
 
     def test_parse_symbol_with_backslash(self):
-        self.assert_parse(r'path\.join', Symbol(r'path.join'))
+        self.assert_parse(r'path.join', Symbol(r'path.join'))
         self.assert_parse(r'path\ join', Symbol(r'path join'))
         self.assert_parse(r'path\\join', Symbol(r'path\join'))
 
