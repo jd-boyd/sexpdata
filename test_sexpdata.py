@@ -5,6 +5,7 @@ from sexpdata import (
     PY3,
     ExpectClosingBracket, ExpectNothing, ExpectSExp,
     parse, tosexp, Symbol, String, Quoted, bracket, Parens,
+    Brackets, Delimiters,
 )
 import unittest
 
@@ -102,6 +103,53 @@ class TestParseFluctuation(BaseTestCase):
     def test_spaces_between_double_quotes_can_be_skipped(self):
         self.assert_parse('("a""b")', ['a', 'b'])
 
+class TestDeliminter(BaseTestCase):
+
+    def test_normal(self):
+        """
+        When the brace subclass does not exist, brace should be parsed as alphanumeric
+        """
+        import gc
+        gc.collect()
+        self.assertEqual(Delimiters.get_brackets(), {"(": ")", "[": "]"})
+        self.assertEqual(parse('{a b c}'), [Symbol("{a"), Symbol("b"), Symbol("c}")])
+
+    def test_curly_brace(self):
+        """
+        Extending the delimiters using braces
+        """
+        class Braces(Delimiters):
+            opener, closer = '{', '}'
+
+        self.assertEqual(Delimiters.get_brackets(), {"(": ")", "[": "]", "{": "}"})
+
+        self.assert_parse('[a b c]', Brackets([Symbol("a"), Symbol("b"), Symbol("c")]))
+        self.assert_parse('{a b c}', Braces([Symbol("a"), Symbol("b"), Symbol("c")]))
+    def test_multiple_brackets(self):
+        """
+        Extending the delimiters using braces and unicode braces
+        """
+        class Implicit(Delimiters):
+            opener, closer = '{', '}'
+        class StrictImplicit(Delimiters):
+            opener, closer = '⦃', '⦄'
+
+        target = "{σ : Type u} → {m : Type u → Type v} → [inst : Functor m] → ⦃α : Type u⦄ → StateT σ m α → σ → m α"
+        self.assertEqual(Delimiters.get_brackets(), {"(": ")", "[": "]", "{": "}", '⦃': '⦄'})
+
+        self.assertEqual(parse(target), [
+            Implicit([Symbol('σ'), Symbol(':'), Symbol('Type'), Symbol('u')]),
+            Symbol('→'),
+            Implicit([Symbol('m'), Symbol(':'), Symbol('Type'), Symbol('u'), Symbol('→'), Symbol('Type'), Symbol('v')]),
+            Symbol('→'),
+            Brackets([Symbol('inst'), Symbol(':'), Symbol('Functor'), Symbol('m')]),
+            Symbol('→'),
+            StrictImplicit([Symbol('α'), Symbol(':'), Symbol('Type'), Symbol('u')]),
+            Symbol('→'),
+            Symbol('StateT'), Symbol('σ'), Symbol('m'), Symbol('α'),
+            Symbol('→'),
+            Symbol('σ'), Symbol('→'), Symbol('m'), Symbol('α')
+        ])
 
 class TestUnicode(BaseTestCase):
 
