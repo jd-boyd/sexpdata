@@ -797,4 +797,5 @@ def parse(string, **kwds):
     [[Symbol('a'), Quoted([Symbol('b')])]]
 
     """
+    assert type(string)==str
     return Parser(string, **kwds).parse()
