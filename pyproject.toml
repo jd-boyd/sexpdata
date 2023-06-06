@@ -1,3 +1,32 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "sexpdata"
+version = "0.0.5"
+authors = [
+  { name="Joshua D. Boyd", email="jdboyd@jdboyd.net" },
+  { name="Takafumi Arakaki", email="aka.tkf@gmail.com" },
+
+]
+description = "S-expression parser for Python"
+readme = "README.rst"
+requires-python = ">=3.7"
+classifiers = [
+        "Development Status :: 3 - Alpha",
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        "Programming Language :: Lisp",
+        "Programming Language :: Emacs-Lisp",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jd-boyd/sexpdata"
+"Bug Tracker" = "https://github.com/jd-boyd/sexpdata/issues"
