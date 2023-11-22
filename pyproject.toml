@@ -26,7 +26,7 @@ classifiers = [
         "Programming Language :: Lisp",
         "Programming Language :: Emacs-Lisp",
 ]
-dynamic = ["license"]
+dynamic = ["license", "keywords"]
 
 [project.urls]
 "Homepage" = "https://github.com/jd-boyd/sexpdata"
