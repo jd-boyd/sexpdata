@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sexpdata"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
   { name="Joshua D. Boyd", email="jdboyd@jdboyd.net" },
   { name="Takafumi Arakaki", email="aka.tkf@gmail.com" },
@@ -13,6 +13,7 @@ authors = [
 description = "S-expression parser for Python"
 readme = "README.rst"
 requires-python = ">=3.7"
+license = {text = "BSD-2-Clause"}
 classifiers = [
         "Development Status :: 3 - Alpha",
         'License :: OSI Approved :: BSD License',
