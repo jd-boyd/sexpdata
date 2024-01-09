@@ -26,6 +26,13 @@ Links:
 * `Travis CI <https://travis-ci.org/#!/jd-boyd/sexpdata>`_
 
 
+Making a release
+-------
+
+1. `python ./setup.py sdist`
+1. `twine upload dist/*`
+
+
 License
 -------
 

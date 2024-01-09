@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
     name='sexpdata',
-    version='1.0.1',
+    version='1.0.2',
     py_modules=['sexpdata'],
     author='Joshua D. Boyd, Takafumi Arakaki',
     author_email='jdboyd@jdboyd.net',
