@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -13,7 +13,6 @@ authors = [
 description = "S-expression parser for Python"
 readme = "README.rst"
 requires-python = ">=3.7"
-license = {text = "BSD-2-Clause"}
 classifiers = [
         "Development Status :: 3 - Alpha",
         'License :: OSI Approved :: BSD License',
@@ -24,10 +23,12 @@ classifiers = [
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         "Programming Language :: Lisp",
         "Programming Language :: Emacs-Lisp",
 ]
-dynamic = ["license", "keywords"]
+dynamic = ["keywords"]
+license = {file = "LICENSE"}
 
 [project.urls]
 "Homepage" = "https://github.com/jd-boyd/sexpdata"

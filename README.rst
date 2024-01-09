@@ -27,9 +27,11 @@ Links:
 
 
 Making a release
--------
+----------------
 
-1. `python ./setup.py sdist`
+1. `python -m build`
+1. `twine check dist/*`
+1. `git tag v1.0.x`
 1. `twine upload dist/*`
 
 
