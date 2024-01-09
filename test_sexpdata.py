@@ -207,6 +207,12 @@ def test_tosexp_value_errors():
         tosexp(Parens())
 
 
+def test_parse_float():
+    assert parse("-1.012") == [-1.012]
+    assert parse("2E22") == [Symbol("2E22")]
+    assert parse("inf") == [Symbol("inf")]
+
+
 def test_too_many_brackets():
     with pytest.raises(ExpectNothing):
         parse("(a b))")
