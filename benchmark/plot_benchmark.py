@@ -11,7 +11,7 @@ from matplotlib import pyplot
 
 from run_benchmark import benchmarks, REPO_PATH, DB_PATH
 
-PLOT_DIR = os.path.join(REPO_PATH, 'tmp', 'plot')
+PLOT_DIR = os.path.join(REPO_PATH, "tmp", "plot")
 
 html_template = """
 <html>
@@ -38,14 +38,14 @@ def main():
     for bm in benchmarks:
         fig = pyplot.figure()
         bm.plot(DB_PATH, ax=pyplot.gca())
-        figname = '{0}.png'.format(bm.name)
+        figname = "{0}.png".format(bm.name)
         figpath = os.path.join(PLOT_DIR, figname)
-        fig.savefig(figpath, bbox_inches='tight')
+        fig.savefig(figpath, bbox_inches="tight")
         figname_list.append(figname)
 
-    with open(os.path.join(PLOT_DIR, 'index.html'), 'w') as f:
+    with open(os.path.join(PLOT_DIR, "index.html"), "w") as f:
         f.write(generate_html(figname_list))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
