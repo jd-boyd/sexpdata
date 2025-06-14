@@ -10,10 +10,10 @@ import sexpdata
 
 
 def tojsonable(obj):
-    if isinstance(obj, sexpdata.SExpBase):
+    if hasattr(obj, 'value') and callable(getattr(obj, 'value')):
         return tojsonable(obj.value())
     if isinstance(obj, list):
-        return map(tojsonable, obj)
+        return list(map(tojsonable, obj))
     return obj
 
 

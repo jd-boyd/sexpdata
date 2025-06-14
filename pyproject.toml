@@ -12,7 +12,7 @@ authors = [
 ]
 description = "S-expression parser for Python"
 readme = "README.rst"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 classifiers = [
         "Development Status :: 3 - Alpha",
         'License :: OSI Approved :: BSD License',
@@ -28,6 +28,9 @@ classifiers = [
 ]
 license = {file = "LICENSE"}
 keywords = ['s-expression', 'lisp', 'parser']
+
+[project.scripts]
+sexp2json = "sexp2json:main"
 
 [project.urls]
 "Homepage" = "https://github.com/jd-boyd/sexpdata"
