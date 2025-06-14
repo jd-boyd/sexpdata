@@ -431,21 +431,12 @@ def _(obj, **kwds):
     return str(obj)
 
 
-class String(str):
+class String:
+    def __init__(self, object):
+        self._s = str(object)
+
     def __eq__(self, other):
-        """
-        >>> from itertools import permutations
-        >>> S = 'a', String('a'), Symbol('a')
-        >>> all(x == x for x in S)
-        True
-        >>> any(x != x for x in S)
-        False
-        >>> any(x == y for x, y in permutations(S, 2))
-        False
-        >>> all(x != y for x, y in permutations(S, 2))
-        True
-        """
-        return self.__class__ == other.__class__ and str.__eq__(self, other)
+        return self.__class__ == other.__class__ and str.__eq__(self._s, other._s)
 
     def __ne__(self, other):
         return not self == other
@@ -456,7 +447,7 @@ class String(str):
         >>> len(D)
         3
         """
-        return str.__hash__(self)
+        return str.__hash__(self._s)
 
     _lisp_quoted_specials = [  # from Pymacs
         ("\\", "\\\\"),  # must come first to avoid doubly quoting "\"
@@ -471,12 +462,18 @@ class String(str):
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, str.__repr__(self))
+        return "{0}({1})".format(self.__class__.__name__, str.__repr__(self._s))
+
+    def __str__(self):
+        return self._s
 
     @classmethod
     def quote(cls, string):
         for s, q in cls._lisp_quoted_specials:
-            string = string.replace(s, q)
+            if type(string) == str:
+                string = string.replace(s, q)
+            else:
+                string = string._s.replace(s, q)
         return string
 
     @classmethod
@@ -484,7 +481,7 @@ class String(str):
         return cls._lisp_quoted_to_raw.get(string, string)
 
     def value(self):
-        return str(self)
+        return str(self._s)
 
 
 @tosexp.register(String)
