@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from sexpdata import (
-    PY3,
     ExpectClosingBracket,
     ExpectNothing,
     ExpectSExp,
@@ -17,6 +16,7 @@ from sexpdata import (
     Delimiters,
 )
 import unittest
+import sys
 
 import pytest
 

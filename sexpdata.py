@@ -96,24 +96,7 @@ except ImportError:
     from collections import Iterable, Mapping, Sequence
 from itertools import chain
 from string import whitespace
-
-
-### PEP fallbacks
-
-try:
-    from functools import singledispatch
-except ImportError:
-    from singledispatch import singledispatch
-
-
-### Python 3 compatibility
-
-try:
-    unicode
-    PY3 = False
-except NameError:
-    unicode = str  # Python 3
-    PY3 = True
+from functools import singledispatch
 
 
 ### Interface
@@ -292,7 +275,7 @@ def dumps(obj, **kwds):
     (a '(b))
 
     """
-    return unicode(tosexp(obj, **kwds))
+    return str(tosexp(obj, **kwds))
 
 
 def car(obj):
@@ -415,7 +398,7 @@ def _(obj, tuple_as="list", **kwds):
         raise ValueError("tuple_as={0!r} is not valid".format(tuple_as))
 
 
-@tosexp.register(unicode)
+@tosexp.register(str)
 def _(obj, str_as="string", **kwds):
     kwds["str_as"] = str_as
     if str_as == "symbol":
@@ -442,7 +425,7 @@ def _(obj, **kwds):
     return str(obj)
 
 
-class String(unicode):
+class String(str):
     def __eq__(self, other):
         """
         >>> from itertools import permutations
@@ -456,7 +439,7 @@ class String(unicode):
         >>> all(x != y for x, y in permutations(S, 2))
         True
         """
-        return self.__class__ == other.__class__ and unicode.__eq__(self, other)
+        return self.__class__ == other.__class__ and str.__eq__(self, other)
 
     def __ne__(self, other):
         return not self == other
@@ -467,7 +450,7 @@ class String(unicode):
         >>> len(D)
         3
         """
-        return unicode.__hash__(self)
+        return str.__hash__(self)
 
     _lisp_quoted_specials = [  # from Pymacs
         ("\\", "\\\\"),  # must come first to avoid doubly quoting "\"
@@ -482,7 +465,7 @@ class String(unicode):
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def __repr__(self):
-        return "{0}({1})".format(self.__class__.__name__, unicode.__repr__(self))
+        return "{0}({1})".format(self.__class__.__name__, str.__repr__(self))
 
     @classmethod
     def quote(cls, string):
@@ -495,7 +478,7 @@ class String(unicode):
         return cls._lisp_quoted_to_raw.get(string, string)
 
     def value(self):
-        return unicode(self)
+        return str(self)
 
 
 @tosexp.register(String)
@@ -547,7 +530,7 @@ class Delimiters(namedtuple("Delimiters", "I")):
         if isinstance(x, Mapping):
             plist_pairs = ((Symbol(":" + k), v) for k, v in x.items())
             return tuple.__new__(cls, (tuple(chain.from_iterable(plist_pairs)),))
-        elif isinstance(x, (unicode, bytes)) or not isinstance(x, Iterable):
+        elif isinstance(x, (str, bytes)) or not isinstance(x, Iterable):
             return tuple.__new__(cls, ((x,),))  # unary *args
         elif isinstance(x, Sequence):
             return tuple.__new__(cls, (x,))
