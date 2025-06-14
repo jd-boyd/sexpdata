@@ -1,5 +1,6 @@
 # [[[cog import cog; cog.outl('"""\n%s\n"""' % file('README.rst').read()) ]]]
 from __future__ import unicode_literals
+
 """
 S-expression parser for Python
 ==============================
@@ -64,20 +65,30 @@ See the source code for more information.
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = '1.0.4'
-__author__ = 'Joshua D. Boyd, Takafumi Arakaki'
-__license__ = 'BSD License'
+__version__ = "1.0.4"
+__author__ = "Joshua D. Boyd, Takafumi Arakaki"
+__license__ = "BSD License"
 __all__ = [
     # API functions:
-    'load', 'loads', 'dump', 'dumps', 'parse',
+    "load",
+    "loads",
+    "dump",
+    "dumps",
+    "parse",
     # Utility functions:
-    'car', 'cdr',
+    "car",
+    "cdr",
     # S-expression classes:
-    'Symbol', 'String', 'Quoted', 'Brackets', 'Parens',
+    "Symbol",
+    "String",
+    "Quoted",
+    "Brackets",
+    "Parens",
 ]
 
 import re
 from collections import namedtuple
+
 try:
     from collections.abc import Iterable, Mapping, Sequence
 except ImportError:
@@ -106,6 +117,7 @@ except NameError:
 
 
 ### Interface
+
 
 def load(filelike, **kwds):
     """
@@ -315,12 +327,13 @@ def cdr(obj):
     # This is very lazy implementation.  Probably the best way to do
     # it is to define `Cons` S-expression class.
     if len(obj) > 2:
-        if obj[1] == Symbol('.'):
+        if obj[1] == Symbol("."):
             return obj[2]
     return obj[1:]
 
 
 ### Core
+
 
 @singledispatch
 def tosexp(obj, **kwds):
@@ -372,12 +385,13 @@ def tosexp(obj, **kwds):
     >>> dumps(round(math.pi, n) for n in range(5))
     '(3.0 3.1 3.14 3.14 3.14)'
     """
-    if hasattr(obj, '__to_lisp_as__'):
+    if hasattr(obj, "__to_lisp_as__"):
         return tosexp(obj.__to_lisp_as__(), **kwds)
     else:
         raise TypeError(
             "Object of type '{0}' cannot be converted by `tosexp`. "
-            "It's value is '{1!r}'".format(type(obj), obj))
+            "It's value is '{1!r}'".format(type(obj), obj)
+        )
 
 
 @tosexp.register(Iterable)
@@ -387,38 +401,38 @@ def _(obj, **kwds):
 
 
 @tosexp.register(tuple)
-def _(obj, tuple_as='list', **kwds):
-    kwds['tuple_as'] = tuple_as
-    if hasattr(obj, '__to_lisp_as__'):
+def _(obj, tuple_as="list", **kwds):
+    kwds["tuple_as"] = tuple_as
+    if hasattr(obj, "__to_lisp_as__"):
         return tosexp(obj.__to_lisp_as__(), **kwds)
-    elif hasattr(obj, '_asdict'):
+    elif hasattr(obj, "_asdict"):
         return tosexp(Parens(obj._asdict()), **kwds)
-    elif tuple_as == 'list':
+    elif tuple_as == "list":
         return tosexp(Parens(obj), **kwds)
-    elif tuple_as == 'array':
+    elif tuple_as == "array":
         return tosexp(Brackets(obj), **kwds)
     else:
-        raise ValueError('tuple_as={0!r} is not valid'.format(tuple_as))
+        raise ValueError("tuple_as={0!r} is not valid".format(tuple_as))
 
 
 @tosexp.register(unicode)
-def _(obj, str_as='string', **kwds):
-    kwds['str_as'] = str_as
-    if str_as == 'symbol':
+def _(obj, str_as="string", **kwds):
+    kwds["str_as"] = str_as
+    if str_as == "symbol":
         return obj
-    elif str_as == 'string':
+    elif str_as == "string":
         return tosexp(String(obj))
     else:
-        raise ValueError('str_as={0!r} is not valid'.format(str_as))
+        raise ValueError("str_as={0!r} is not valid".format(str_as))
 
 
 @tosexp.register(type(None))
-def _(obj, none_as='()', **kwds):
+def _(obj, none_as="()", **kwds):
     return none_as
 
 
 @tosexp.register(bool)
-def _(obj, false_as='()', true_as='t', **kwds):
+def _(obj, false_as="()", true_as="t", **kwds):
     return true_as if obj else false_as
 
 
@@ -429,7 +443,6 @@ def _(obj, **kwds):
 
 
 class String(unicode):
-
     def __eq__(self, other):
         """
         >>> from itertools import permutations
@@ -443,8 +456,7 @@ class String(unicode):
         >>> all(x != y for x, y in permutations(S, 2))
         True
         """
-        return (self.__class__ == other.__class__ and
-                unicode.__eq__(self, other))
+        return self.__class__ == other.__class__ and unicode.__eq__(self, other)
 
     def __ne__(self, other):
         return not self == other
@@ -458,19 +470,23 @@ class String(unicode):
         return unicode.__hash__(self)
 
     _lisp_quoted_specials = [  # from Pymacs
-        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
-        ('"', '\\"'), ('\b', '\\b'), ('\f', '\\f'),
-        ('\n', '\\n'), ('\r', '\\r'), ('\t', '\\t')]
+        ("\\", "\\\\"),  # must come first to avoid doubly quoting "\"
+        ('"', '\\"'),
+        ("\b", "\\b"),
+        ("\f", "\\f"),
+        ("\n", "\\n"),
+        ("\r", "\\r"),
+        ("\t", "\\t"),
+    ]
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__,
-                                 unicode.__repr__(self))
+        return "{0}({1})".format(self.__class__.__name__, unicode.__repr__(self))
 
     @classmethod
     def quote(cls, string):
-        for (s, q) in cls._lisp_quoted_specials:
+        for s, q in cls._lisp_quoted_specials:
             string = string.replace(s, q)
         return string
 
@@ -488,13 +504,20 @@ def _(obj, **kwds):
 
 
 class Symbol(String):
-
     _lisp_quoted_specials = [
-        ('\\', '\\\\'),    # must come first to avoid doubly quoting "\"
-        ("'", r"\'"), ("`", r"\`"), ('"', r'\"'),
-        ('(', r'\('), (')', r'\)'), ('[', r'\['), (']', r'\]'),
-        (' ', r'\ '), (',', r'\,'), ('?', r'\?'),
-        (';', r'\;'), ('#', r'\#'),
+        ("\\", "\\\\"),  # must come first to avoid doubly quoting "\"
+        ("'", r"\'"),
+        ("`", r"\`"),
+        ('"', r"\""),
+        ("(", r"\("),
+        (")", r"\)"),
+        ("[", r"\["),
+        ("]", r"\]"),
+        (" ", r"\ "),
+        (",", r"\,"),
+        ("?", r"\?"),
+        (";", r"\;"),
+        ("#", r"\#"),
     ]
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
@@ -505,31 +528,30 @@ def _(obj, **kwds):
     return Symbol.quote(obj)
 
 
-class Quoted(namedtuple('Quoted', 'x')):
-
+class Quoted(namedtuple("Quoted", "x")):
     def __repr__(self):
-        return '{0.__class__.__name__}({0.x!r})'.format(self)
+        return "{0.__class__.__name__}({0.x!r})".format(self)
+
 
 @tosexp.register(Quoted)
 def _(obj, **kwds):
     return "'" + tosexp(obj.x, **kwds)
 
 
-class Delimiters(namedtuple('Delimiters', 'I')):
-
+class Delimiters(namedtuple("Delimiters", "I")):
     def __new__(cls, *args):
         if not args:
             raise ValueError("Expected an Iterable/Mapping argument or *args")
         x = args[0] if len(args) == 1 else args
 
         if isinstance(x, Mapping):
-            plist_pairs = ((Symbol(':' + k), v) for k, v in x.items())
+            plist_pairs = ((Symbol(":" + k), v) for k, v in x.items())
             return tuple.__new__(cls, (tuple(chain.from_iterable(plist_pairs)),))
         elif isinstance(x, (unicode, bytes)) or not isinstance(x, Iterable):
-            return tuple.__new__(cls, ((x,),)) # unary *args
+            return tuple.__new__(cls, ((x,),))  # unary *args
         elif isinstance(x, Sequence):
             return tuple.__new__(cls, (x,))
-        else: # isinstance(x, Iterable)
+        else:  # isinstance(x, Iterable)
             return tuple.__new__(cls, (tuple(x),))
 
     @staticmethod
@@ -544,10 +566,13 @@ class Delimiters(namedtuple('Delimiters', 'I')):
     def get_brackets():
         return {cls.opener: cls.closer for cls in Delimiters.__subclasses__()}
 
+
 @tosexp.register(Delimiters)
 def _(self, **kwds):
     # Don't break up expressions produced by certain overloads of tosexp
-    dont_break = all(tosexp.dispatch(type(x)) not in DONT_BREAK_OVERLOADS for x in self.I)
+    dont_break = all(
+        tosexp.dispatch(type(x)) not in DONT_BREAK_OVERLOADS for x in self.I
+    )
 
     if "pretty_print" in kwds and kwds["pretty_print"] and not dont_break:
         expr_separator = "\n"
@@ -561,12 +586,18 @@ def _(self, **kwds):
     exprs = expr_separator.join(tosexp(x, **kwds) for x in self.I)
     indented_exprs = "".join(exprs_indent + line for line in exprs.splitlines(True))
 
-    return (self.__class__.opener +
-            exprs_separator +
-            indented_exprs +
-            exprs_separator +
-            self.__class__.closer)
-DONT_BREAK_OVERLOADS = [tosexp.dispatch(c) for c in (object, Iterable, Mapping, tuple, Delimiters)]
+    return (
+        self.__class__.opener
+        + exprs_separator
+        + indented_exprs
+        + exprs_separator
+        + self.__class__.closer
+    )
+
+
+DONT_BREAK_OVERLOADS = [
+    tosexp.dispatch(c) for c in (object, Iterable, Mapping, tuple, Delimiters)
+]
 
 
 class Brackets(Delimiters):
@@ -582,7 +613,7 @@ class Brackets(Delimiters):
     '[:a 1]'
     """
 
-    opener, closer = '[', ']'
+    opener, closer = "[", "]"
 
 
 class Parens(Delimiters):
@@ -602,51 +633,50 @@ class Parens(Delimiters):
     '[0 (1 2 3) 4]'
     """
 
-    opener, closer = '(', ')'
+    opener, closer = "(", ")"
 
 
 def bracket(val, bra):
-    if bra == '(':
+    if bra == "(":
         return val
     else:
         return Delimiters.from_opener(bra, val)
 
 
 class ExpectClosingBracket(Exception):
-
     def __init__(self, got, expect):
         super(ExpectClosingBracket, self).__init__(
             "Not enough closing brackets. "
             "Expected {0!r} to be the last letter in the sexp. "
-            "Got: {1!r}".format(expect, got))
+            "Got: {1!r}".format(expect, got)
+        )
 
 
 class ExpectNothing(Exception):
-
     def __init__(self, got):
         super(ExpectNothing, self).__init__(
             "Too many closing brackets. "
             "Expected no character left in the sexp. "
-            "Got: {0!r}".format(got))
+            "Got: {0!r}".format(got)
+        )
+
 
 class ExpectSExp(Exception):
-
     def __init__(self, pos):
         super(ExpectSExp, self).__init__(
-            'No s-exp is found after an apostrophe'
-            ' at position {0}'.format(pos))
+            "No s-exp is found after an apostrophe at position {0}".format(pos)
+        )
 
 
 class Parser(object):
-
     brackets: dict
     closing_brackets: set
     _atom_end_basic: set
     _atom_end_basic_or_escape_regexp: str
 
-
-    def __init__(self, string, string_to=None, nil='nil', true='t', false=None,
-                 line_comment=';'):
+    def __init__(
+        self, string, string_to=None, nil="nil", true="t", false=None, line_comment=";"
+    ):
         self.string = string
         self.nil = nil
         self.true = true
@@ -657,17 +687,19 @@ class Parser(object):
         # Compute brackets from delimiter
         self.brackets = Delimiters.get_brackets()
         self.closing_brackets = set(self.brackets.values())
-        self._atom_end_basic = \
-            set(self.brackets) | set(self.closing_brackets) | \
-            set('"') | set(whitespace)
-        self._atom_end_basic_or_escape_regexp = "|".join(map(re.escape,
-                                                         self._atom_end_basic | set('\\')))
+        self._atom_end_basic = (
+            set(self.brackets) | set(self.closing_brackets) | set('"') | set(whitespace)
+        )
+        self._atom_end_basic_or_escape_regexp = "|".join(
+            map(re.escape, self._atom_end_basic | set("\\"))
+        )
         self.quote_or_escape_re = re.compile(r'"|\\')
         self.atom_end = set([line_comment]) | self._atom_end_basic
-        self.atom_end_or_escape_re = \
-            re.compile("{0}|{1}".format(self._atom_end_basic_or_escape_regexp,
-                                        re.escape(line_comment)))
-
+        self.atom_end_or_escape_re = re.compile(
+            "{0}|{1}".format(
+                self._atom_end_basic_or_escape_regexp, re.escape(line_comment)
+            )
+        )
 
     def parse_str(self, i):
         string = self.string
@@ -685,12 +717,12 @@ class Parser(object):
             if c == '"':
                 i = end + 1
                 break
-            elif c == '\\':
+            elif c == "\\":
                 i = end + 1
                 append(String.unquote(c + string[i]))
         else:
             raise ExpectClosingBracket('"', None)
-        return (i, ''.join(chars))
+        return (i, "".join(chars))
 
     def parse_atom(self, i):
         string = self.string
@@ -711,13 +743,13 @@ class Parser(object):
             if c in atom_end:
                 i = end  # this is different from str
                 break
-            elif c == '\\':
+            elif c == "\\":
                 i = end + 1
                 append(Symbol.unquote(c + string[i]))
             i += 1
         else:
             raise ExpectClosingBracket('"', None)
-        return (i, self.atom(''.join(chars)))
+        return (i, self.atom("".join(chars)))
 
     def atom(self, token):
         if token == self.nil:
@@ -730,9 +762,13 @@ class Parser(object):
             return int(token)
         except ValueError:
             try:
-                if 'e' in token.lower() or 'inf' in token.lower():
-                    raise ValueError('Invalid s-exp float')
-                return float(token)
+                result = float(token)
+                # Block automatic conversion to infinity or NaN
+                if (
+                    result in (float("inf"), float("-inf")) or result != result
+                ):  # NaN check
+                    raise ValueError("Invalid s-exp float")
+                return result
             except ValueError:
                 return Symbol(token)
 
@@ -770,7 +806,7 @@ class Parser(object):
                 append(Quoted(subsexp[0]))
                 sexp.extend(subsexp[1:])
             elif c == self.line_comment:
-                i = string.find('\n', i) + 1
+                i = string.find("\n", i) + 1
                 if i <= 0:
                     i = len_string
                     break
@@ -800,5 +836,5 @@ def parse(string, **kwds):
     [[Symbol('a'), Quoted([Symbol('b')])]]
 
     """
-    assert type(string)==str
+    assert type(string) == str
     return Parser(string, **kwds).parse()
