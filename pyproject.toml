@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sexpdata"
-version = "1.0.3"
+version = "1.0.4"
 authors = [
   { name="Joshua D. Boyd", email="jdboyd@jdboyd.net" },
   { name="Takafumi Arakaki", email="aka.tkf@gmail.com" },
