@@ -730,6 +730,8 @@ class Parser(object):
             return int(token)
         except ValueError:
             try:
+                if 'e' in token.lower() or 'inf' in token.lower():
+                    raise ValueError('Invalid s-exp float')
                 return float(token)
             except ValueError:
                 return Symbol(token)
