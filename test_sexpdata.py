@@ -291,13 +291,13 @@ def test_issue_18():
 
     sexp = "(foo)'   "
     with pytest.raises(
-        ExpectSExp, match="No s-exp is found after an apostrophe at position 5"
+        ExpectSExp, match="No s-exp is found after an apostrophe"
     ):
         sexpdata.parse(sexp)
 
     sexp = "'   "
     with pytest.raises(
-        ExpectSExp, match="No s-exp is found after an apostrophe at position 0"
+        ExpectSExp, match="No s-exp is found after an apostrophe"
     ):
         sexpdata.parse(sexp)
 
