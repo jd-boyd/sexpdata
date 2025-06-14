@@ -453,12 +453,18 @@ def _(obj, **kwds):
 
 
 class String:
+    __match_args__ = ("object",)
+
     def __init__(self, object, position=None):
+        print("INIT", object)
         self._s = str(object)
         self.position = position
 
     def __eq__(self, other):
+        # I'm not confident that this won't have to be backed out.
+        print("EQ", self.__class__, other.__class__)
         return self.__class__ == other.__class__ and str.__eq__(self._s, other._s)
+        # return other.__class__ in (self.__class__, str) and str.__eq__(self, other)
 
     def __ne__(self, other):
         return not self == other
@@ -842,7 +848,6 @@ class Parser(object):
         sexp = []
         append = sexp.append
         bracket_stack = []  # Track opening brackets for better error reporting
-
         while i < len_string:
             c = string[i]
             current_pos = self.get_position(i)

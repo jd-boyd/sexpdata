@@ -543,3 +543,76 @@ def test_edge_case_positions():
         sexpdata.loads("(before after\\")
     assert exc_info.value.position.line == 1
     assert exc_info.value.position.column == 14
+
+
+def test_string_equality_permutations():
+    """Test that String, Symbol, and str objects have distinct equality."""
+    S = "a", String("a"), Symbol("a")
+
+    assert String("a") == String("a")
+    assert Symbol("a") == Symbol("a")
+
+    assert Symbol("a") != String("a")
+
+    assert String("a") != "a"
+    assert Symbol("a") != "a"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="match/case requires Python 3.10+"
+)
+def test_symbol_match_case():
+    """Test that Symbol objects work with match/case syntax."""
+    result = None
+
+    # Test matching against Symbol type
+    symbol_obj = Symbol("asdf")
+    match symbol_obj:
+        case Symbol() if symbol_obj == Symbol("asdf"):
+            result = 1
+        case _:
+            result = 0
+
+    assert result == 1
+
+    # Test symbol matching with different string values
+    other_symbol = Symbol("other")
+    match other_symbol:
+        case Symbol() if other_symbol == Symbol("asdf"):
+            result = 0
+        case Symbol() if other_symbol == Symbol("other"):
+            result = 2
+        case _:
+            result = -1
+
+    assert result == 2
+
+    # Test general Symbol type matching
+    test_symbol = Symbol("test")
+    match test_symbol:
+        case Symbol():
+            result = str(test_symbol)
+        case _:
+            result = None
+
+    assert result == "test"
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="match/case requires Python 3.10+"
+)
+def test_symbol_match_case_user_supplied():
+
+    # Test derived from in issue #58
+    matched = False
+    match String("asdf"):
+        case String("asdf"):
+            matched = True
+    assert matched
+
+    # Test example in issue #58
+    matched = False
+    match Symbol("asdf"):
+        case Symbol("asdf"):
+            matched = True
+    assert matched
