@@ -84,6 +84,12 @@ __all__ = [
     "Quoted",
     "Brackets",
     "Parens",
+    # Exception classes:
+    "ExpectClosingBracket",
+    "ExpectNothing",
+    "ExpectSExp",
+    "UnterminatedString",
+    "InvalidEscape",
 ]
 
 import re
@@ -628,7 +634,7 @@ def bracket(val, bra):
 
 class ExpectClosingBracket(Exception):
     def __init__(self, got, expect):
-        super(ExpectClosingBracket, self).__init__(
+        super().__init__(
             "Not enough closing brackets. "
             "Expected {0!r} to be the last letter in the sexp. "
             "Got: {1!r}".format(expect, got)
@@ -637,7 +643,7 @@ class ExpectClosingBracket(Exception):
 
 class ExpectNothing(Exception):
     def __init__(self, got):
-        super(ExpectNothing, self).__init__(
+        super().__init__(
             "Too many closing brackets. "
             "Expected no character left in the sexp. "
             "Got: {0!r}".format(got)
@@ -646,9 +652,19 @@ class ExpectNothing(Exception):
 
 class ExpectSExp(Exception):
     def __init__(self, pos):
-        super(ExpectSExp, self).__init__(
+        super().__init__(
             "No s-exp is found after an apostrophe at position {0}".format(pos)
         )
+
+
+class UnterminatedString(Exception):
+    def __init__(self, pos):
+        super().__init__("Unterminated string starting at position {0}".format(pos))
+
+
+class InvalidEscape(Exception):
+    def __init__(self, pos):
+        super().__init__("Invalid escape sequense starting at position {0}".format(pos))
 
 
 class Parser(object):
@@ -691,9 +707,12 @@ class Parser(object):
         search = self.quote_or_escape_re.search
 
         assert string[i] == '"'  # never fail
+        start_pos = i
         while True:
             i += 1
             match = search(string, i)
+            if match is None:
+                raise UnterminatedString(start_pos)
             end = match.start()
             append(string[i:end])
             c = match.group()
@@ -702,6 +721,8 @@ class Parser(object):
                 break
             elif c == "\\":
                 i = end + 1
+                if i >= len(string):
+                    raise InvalidEscape(end)
                 append(String.unquote(c + string[i]))
         else:
             raise ExpectClosingBracket('"', None)
@@ -728,6 +749,8 @@ class Parser(object):
                 break
             elif c == "\\":
                 i = end + 1
+                if i >= len(string):
+                    raise InvalidEscape(end)
                 append(Symbol.unquote(c + string[i]))
             i += 1
         else:

@@ -5,6 +5,8 @@ from sexpdata import (
     ExpectClosingBracket,
     ExpectNothing,
     ExpectSExp,
+    UnterminatedString,
+    InvalidEscape,
     parse,
     tosexp,
     Symbol,
@@ -312,3 +314,17 @@ def test_issue_37_value_field():
     assert String("ObjStr").value() == "ObjStr"
     assert Symbol("ObjSym").value() == "ObjSym"
     assert Symbol("ObjList").value() == "ObjList"
+
+
+def test_malformed_unclosed_string():
+    import sexpdata
+
+    with pytest.raises(UnterminatedString):
+        sexpdata.loads('"asdf')
+
+
+def test_malformed_invalid_escape():
+    import sexpdata
+
+    with pytest.raises(InvalidEscape):
+        sexpdata.loads("\\")
