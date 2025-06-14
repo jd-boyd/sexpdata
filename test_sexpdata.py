@@ -7,6 +7,8 @@ from sexpdata import (
     ExpectSExp,
     UnterminatedString,
     InvalidEscape,
+    SExpError,
+    Position,
     parse,
     tosexp,
     Symbol,
@@ -290,15 +292,11 @@ def test_issue_18():
     import sexpdata
 
     sexp = "(foo)'   "
-    with pytest.raises(
-        ExpectSExp, match="No s-exp is found after an apostrophe"
-    ):
+    with pytest.raises(ExpectSExp, match="No s-exp is found after an apostrophe"):
         sexpdata.parse(sexp)
 
     sexp = "'   "
-    with pytest.raises(
-        ExpectSExp, match="No s-exp is found after an apostrophe"
-    ):
+    with pytest.raises(ExpectSExp, match="No s-exp is found after an apostrophe"):
         sexpdata.parse(sexp)
 
 
@@ -328,3 +326,98 @@ def test_malformed_invalid_escape():
 
     with pytest.raises(InvalidEscape):
         sexpdata.loads("\\")
+
+
+def test_unterminated_string_position():
+    """Test that UnterminatedString errors report correct position."""
+    import sexpdata
+
+    # Simple case at start of line
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads('"asdf')
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+    # Case with content before
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads('(a "asdf')
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 4
+
+
+def test_invalid_escape_position():
+    """Test that InvalidEscape errors report correct position."""
+    import sexpdata
+
+    # Lone backslash at start
+    with pytest.raises(InvalidEscape) as exc_info:
+        sexpdata.loads("\\")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+    # Invalid escape in atom (backslash at end)
+    with pytest.raises(InvalidEscape) as exc_info:
+        sexpdata.loads("test\\")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 5
+
+
+def test_expect_closing_bracket_position():
+    """Test that ExpectClosingBracket errors report correct position."""
+    import sexpdata
+
+    # Missing closing bracket
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("(a b")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+
+def test_expect_sexp_position():
+    """Test that ExpectSExp errors report correct position."""
+    import sexpdata
+
+    # Quote without following expression
+    with pytest.raises(ExpectSExp) as exc_info:
+        sexpdata.loads("'")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+    # Quote at end of expression
+    with pytest.raises(ExpectSExp) as exc_info:
+        sexpdata.loads("(a b)'")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 6
+
+
+def test_multiline_position_tracking():
+    """Test position tracking across multiple lines."""
+    import sexpdata
+
+    multiline_input = """(first line
+second "unterminated"""
+
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads(multiline_input)
+    assert exc_info.value.position.line == 2
+    assert exc_info.value.position.column == 8
+
+    # Test with more complex multiline structure
+    complex_input = """(
+  (nested
+    (deeply "unterminated"""
+
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads(complex_input)
+    assert exc_info.value.position.line == 3
+    assert exc_info.value.position.column == 13
+
+
+def test_position_object():
+    """Test Position object functionality."""
+    pos = Position(3, 15, 42)
+    assert pos.line == 3
+    assert pos.column == 15
+    assert pos.offset == 42
+    assert str(pos) == "line 3, column 15"
+    assert repr(pos) == "Position(line=3, column=15)"

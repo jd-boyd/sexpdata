@@ -84,7 +84,10 @@ __all__ = [
     "Quoted",
     "Brackets",
     "Parens",
+    # Position tracking:
+    "Position",
     # Exception classes:
+    "SExpError",
     "ExpectClosingBracket",
     "ExpectNothing",
     "ExpectSExp",
@@ -103,6 +106,24 @@ except ImportError:
 from itertools import chain
 from string import whitespace
 from functools import singledispatch
+
+
+### Position Tracking
+
+
+class Position:
+    """Represents a position in the source text with line and column numbers."""
+
+    def __init__(self, line=1, column=1, offset=0):
+        self.line = line
+        self.column = column
+        self.offset = offset
+
+    def __repr__(self):
+        return f"Position(line={self.line}, column={self.column})"
+
+    def __str__(self):
+        return f"line {self.line}, column {self.column}"
 
 
 ### Interface
@@ -432,8 +453,9 @@ def _(obj, **kwds):
 
 
 class String:
-    def __init__(self, object):
+    def __init__(self, object, position=None):
         self._s = str(object)
+        self.position = position
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and str.__eq__(self._s, other._s)
@@ -629,39 +651,53 @@ def bracket(val, bra):
         return Delimiters.from_opener(bra, val)
 
 
-class ExpectClosingBracket(Exception):
-    def __init__(self, got, expect):
-        super().__init__(
+class SExpError(Exception):
+    """Base class for S-expression parsing errors with position information."""
+
+    def __init__(self, message, position=None):
+        self.position = position
+        if position:
+            super().__init__(f"{message} at {position}")
+        else:
+            super().__init__(message)
+
+
+class ExpectClosingBracket(SExpError):
+    def __init__(self, got, expect, position=None):
+        message = (
             "Not enough closing brackets. "
-            "Expected {0!r} to be the last letter in the sexp. "
-            "Got: {1!r}".format(expect, got)
+            f"Expected {expect!r} to be the last letter in the sexp. "
+            f"Got: {got!r}"
         )
+        super().__init__(message, position)
 
 
-class ExpectNothing(Exception):
-    def __init__(self, got):
-        super().__init__(
+class ExpectNothing(SExpError):
+    def __init__(self, got, position=None):
+        message = (
             "Too many closing brackets. "
-            "Expected no character left in the sexp. "
-            "Got: {0!r}".format(got)
+            f"Expected no character left in the sexp. "
+            f"Got: {got!r}"
         )
+        super().__init__(message, position)
 
 
-class ExpectSExp(Exception):
-    def __init__(self, pos):
-        super().__init__(
-            "No s-exp is found after an apostrophe at position {0}".format(pos)
-        )
+class ExpectSExp(SExpError):
+    def __init__(self, position=None):
+        message = "No s-exp is found after an apostrophe"
+        super().__init__(message, position)
 
 
-class UnterminatedString(Exception):
-    def __init__(self, pos):
-        super().__init__("Unterminated string starting at position {0}".format(pos))
+class UnterminatedString(SExpError):
+    def __init__(self, position=None):
+        message = "Unterminated string literal"
+        super().__init__(message, position)
 
 
-class InvalidEscape(Exception):
-    def __init__(self, pos):
-        super().__init__("Invalid escape sequense starting at position {0}".format(pos))
+class InvalidEscape(SExpError):
+    def __init__(self, escape_char, position=None):
+        message = f"Invalid escape sequence: \\{escape_char}"
+        super().__init__(message, position)
 
 
 class Parser(object):
@@ -680,6 +716,9 @@ class Parser(object):
         self.string_to = (lambda x: x) if string_to is None else string_to
         self.line_comment = line_comment
 
+        # Build position mapping for error reporting
+        self.position_map = self._build_position_map(string)
+
         # Compute brackets from delimiter
         self.brackets = Delimiters.get_brackets()
         self.closing_brackets = set(self.brackets.values())
@@ -697,14 +736,31 @@ class Parser(object):
             )
         )
 
+    def _build_position_map(self, string):
+        """Build a mapping from string offset to (line, column)"""
+        positions = {}
+        line, column = 1, 1
+        for i, char in enumerate(string):
+            positions[i] = Position(line, column, i)
+            if char == "\n":
+                line += 1
+                column = 1
+            else:
+                column += 1
+        positions[len(string)] = Position(line, column, len(string))
+        return positions
+
+    def get_position(self, offset):
+        """Get position information for a given string offset."""
+        return self.position_map.get(offset, Position())
+
     def parse_str(self, i):
         string = self.string
         chars = []
         append = chars.append
         search = self.quote_or_escape_re.search
 
-        assert string[i] == '"'  # never fail
-        start_pos = i
+        start_pos = self.get_position(i)
         while True:
             i += 1
             match = search(string, i)
@@ -719,10 +775,10 @@ class Parser(object):
             elif c == "\\":
                 i = end + 1
                 if i >= len(string):
-                    raise InvalidEscape(end)
+                    raise InvalidEscape(end, self.get_position(end))
                 append(String.unquote(c + string[i]))
         else:
-            raise ExpectClosingBracket('"', None)
+            raise ExpectClosingBracket('"', self.get_position())
         return (i, "".join(chars))
 
     def parse_atom(self, i):
@@ -731,6 +787,7 @@ class Parser(object):
         append = chars.append
         search = self.atom_end_or_escape_re.search
         atom_end = self.atom_end
+        start_pos = self.get_position(i)
 
         while True:
             match = search(string, i)
@@ -747,14 +804,18 @@ class Parser(object):
             elif c == "\\":
                 i = end + 1
                 if i >= len(string):
-                    raise InvalidEscape(end)
-                append(Symbol.unquote(c + string[i]))
+                    raise InvalidEscape("EOF", self.get_position(end))
+                next_char = string[i]
+                try:
+                    unquoted = Symbol.unquote(c + next_char)
+                    append(unquoted)
+                except KeyError:
+                    raise InvalidEscape(next_char, self.get_position(i))
             i += 1
-        else:
-            raise ExpectClosingBracket('"', None)
-        return (i, self.atom("".join(chars)))
 
-    def atom(self, token):
+        return (i, self.atom("".join(chars), start_pos))
+
+    def atom(self, token, position=None):
         if token == self.nil:
             return []
         if token == self.true:
@@ -773,39 +834,55 @@ class Parser(object):
                     raise ValueError("Invalid s-exp float")
                 return result
             except ValueError:
-                return Symbol(token)
+                return Symbol(token, position)
 
     def parse_sexp(self, i):
         string = self.string
         len_string = len(self.string)
         sexp = []
         append = sexp.append
+        bracket_stack = []  # Track opening brackets for better error reporting
+
         while i < len_string:
             c = string[i]
+            current_pos = self.get_position(i)
+
             if c == '"':
-                (i, subsexp) = self.parse_str(i)
-                append(self.string_to(subsexp))
+                try:
+                    (i, subsexp) = self.parse_str(i)
+                    append(self.string_to(subsexp))
+                except SExpError:
+                    raise  # Re-raise with position already set
             elif c in whitespace:
                 i += 1
                 continue
             elif c in self.brackets:
                 close = self.brackets[c]
+                bracket_stack.append((c, close, current_pos))
                 (i, subsexp) = self.parse_sexp(i + 1)
                 append(bracket(subsexp, c))
                 try:
                     nc = string[i]
                 except IndexError:
-                    nc = None
+                    bracket_info = bracket_stack[-1] if bracket_stack else None
+                    if bracket_info:
+                        raise ExpectClosingBracket(
+                            None, bracket_info[1], bracket_info[2]
+                        )
+                    else:
+                        raise ExpectClosingBracket(None, close, current_pos)
                 if nc != close:
-                    raise ExpectClosingBracket(nc, close)
+                    raise ExpectClosingBracket(nc, close, current_pos)
+                bracket_stack.pop() if bracket_stack else None
                 i += 1
             elif c in self.closing_brackets:
                 break
             elif c == "'":
+                quote_pos = current_pos
                 next_parse_start = i + 1
                 (i, subsexp) = self.parse_sexp(next_parse_start)
                 if not subsexp:
-                    raise ExpectSExp(next_parse_start - 1)
+                    raise ExpectSExp(quote_pos)
                 append(Quoted(subsexp[0]))
                 sexp.extend(subsexp[1:])
             elif c == self.line_comment:
@@ -819,10 +896,16 @@ class Parser(object):
         return (i, sexp)
 
     def parse(self):
-        (i, sexp) = self.parse_sexp(0)
-        if i < len(self.string):
-            raise ExpectNothing(self.string[i:])
-        return sexp
+        try:
+            (i, sexp) = self.parse_sexp(0)
+            if i < len(self.string):
+                raise ExpectNothing(self.string[i:], self.get_position(i))
+            return sexp
+        except SExpError:
+            raise  # Re-raise S-expression specific errors
+        except Exception as e:
+            # Wrap unexpected errors with position info if possible
+            raise SExpError(f"Unexpected parsing error: {e}")
 
 
 def parse(string, **kwds):
