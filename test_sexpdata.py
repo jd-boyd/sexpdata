@@ -421,3 +421,125 @@ def test_position_object():
     assert pos.offset == 42
     assert str(pos) == "line 3, column 15"
     assert repr(pos) == "Position(line=3, column=15)"
+
+
+def test_mismatched_brackets_position():
+    """Test position tracking for mismatched bracket types."""
+    import sexpdata
+
+    # Opening with ( but closing with ]
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("(a b]")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+    # Opening with [ but closing with )
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("[a b)")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 1
+
+    # Nested mismatched brackets
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("(outer [inner)")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 8
+
+
+def test_too_many_closing_brackets_position():
+    """Test position tracking for ExpectNothing (too many closing brackets)."""
+    import sexpdata
+
+    # Extra closing bracket at end
+    with pytest.raises(ExpectNothing) as exc_info:
+        sexpdata.loads("(a b))")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 6
+
+    # Multiple extra closing brackets
+    with pytest.raises(ExpectNothing) as exc_info:
+        sexpdata.loads("(test)]")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 7
+
+    # Extra bracket after valid expression
+    with pytest.raises(ExpectNothing) as exc_info:
+        sexpdata.loads("valid ]")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 7
+
+
+def test_nested_bracket_errors_position():
+    """Test position tracking in deeply nested bracket errors."""
+    import sexpdata
+
+    # Multiple levels of unclosed brackets
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("(level1 (level2 (level3")
+    assert exc_info.value.position.line == 1
+    assert (
+        exc_info.value.position.column == 17
+    )  # Reports the innermost unclosed bracket
+
+    # Mixed bracket types in deep nesting
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads("(round [square (round")
+    assert exc_info.value.position.line == 1
+    assert (
+        exc_info.value.position.column == 16
+    )  # Position of innermost unclosed bracket
+
+
+def test_complex_multiline_errors():
+    """Test position tracking in complex multiline scenarios."""
+    import sexpdata
+
+    # Error in middle of complex structure
+    multiline_complex = """(
+  (define function
+    (lambda (x y)
+      (if (> x y
+        (* x y)
+        (+ x y))))
+  (another "unterminated)"""
+
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads(multiline_complex)
+    assert exc_info.value.position.line == 7
+    assert exc_info.value.position.column == 12
+
+    # Bracket mismatch in multiline
+    multiline_brackets = """(
+  (first-expr)
+  [second-expr
+    (nested)
+  )  ; Wrong closing bracket
+"""
+
+    with pytest.raises(ExpectClosingBracket) as exc_info:
+        sexpdata.loads(multiline_brackets)
+    assert exc_info.value.position.line == 3
+    assert exc_info.value.position.column == 3
+
+
+def test_edge_case_positions():
+    """Test position tracking for edge cases."""
+    import sexpdata
+
+    # Quote at very end of line with newline
+    with pytest.raises(ExpectSExp) as exc_info:
+        sexpdata.loads("(valid expression)'\n")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 19
+
+    # Error after whitespace and comments
+    with pytest.raises(UnterminatedString) as exc_info:
+        sexpdata.loads('  ; comment\n   "unterminated')
+    assert exc_info.value.position.line == 2
+    assert exc_info.value.position.column == 4
+
+    # Escape error in different contexts
+    with pytest.raises(InvalidEscape) as exc_info:
+        sexpdata.loads("(before after\\")
+    assert exc_info.value.position.line == 1
+    assert exc_info.value.position.column == 14
