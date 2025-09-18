@@ -35,3 +35,6 @@ sexp2json = "sexp2json:main"
 [project.urls]
 "Homepage" = "https://github.com/jd-boyd/sexpdata"
 "Bug Tracker" = "https://github.com/jd-boyd/sexpdata/issues"
+
+[tool.pyright]
+reportAttributeAccessIssue = "none"

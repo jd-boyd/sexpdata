@@ -97,36 +97,31 @@ __all__ = [
 
 import re
 from collections import namedtuple
-
-try:
-    from collections.abc import Iterable, Mapping, Sequence
-except ImportError:
-    # Python < 3.3
-    from collections import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from functools import singledispatch
 from itertools import chain
 from string import whitespace
-from functools import singledispatch
+from typing import Any, Optional
 
-
-### Position Tracking
+# Position Tracking
 
 
 class Position:
     """Represents a position in the source text with line and column numbers."""
 
-    def __init__(self, line=1, column=1, offset=0):
+    def __init__(self, line: int = 1, column: int = 1, offset: int = 0) -> None:
         self.line = line
         self.column = column
         self.offset = offset
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Position(line={self.line}, column={self.column})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"line {self.line}, column {self.column}"
 
 
-### Interface
+# Interface
 
 
 def load(filelike, **kwds):
@@ -149,7 +144,7 @@ def load(filelike, **kwds):
     return loads(filelike.read(), **kwds)
 
 
-def loads(string, **kwds):
+def loads(string: str, **kwds):
     """
     Load object from S-expression `string`.
 
@@ -223,7 +218,7 @@ def loads(string, **kwds):
     return obj[0]
 
 
-def dump(obj, filelike, **kwds):
+def dump(obj, filelike, **kwds) -> None:
     """
     Write `obj` as an S-expression into given stream `filelike`.
 
@@ -242,7 +237,7 @@ def dump(obj, filelike, **kwds):
     filelike.write(dumps(obj, **kwds))
 
 
-def dumps(obj, **kwds):
+def dumps(obj, **kwds) -> str:
     """
     Convert python object into an S-expression.
 
@@ -342,7 +337,7 @@ def cdr(obj):
     return obj[1:]
 
 
-### Core
+# Core
 
 
 @singledispatch
@@ -406,12 +401,12 @@ def tosexp(obj, **kwds):
 
 @tosexp.register(Iterable)
 @tosexp.register(Mapping)
-def _(obj, **kwds):
+def _(obj, **kwds) -> str:
     return tosexp(Parens(obj), **kwds)
 
 
 @tosexp.register(tuple)
-def _(obj, tuple_as="list", **kwds):
+def _(obj: tuple[Any, ...], tuple_as: str = "list", **kwds) -> str:
     kwds["tuple_as"] = tuple_as
     if hasattr(obj, "__to_lisp_as__"):
         return tosexp(obj.__to_lisp_as__(), **kwds)
@@ -426,7 +421,7 @@ def _(obj, tuple_as="list", **kwds):
 
 
 @tosexp.register(str)
-def _(obj, str_as="string", **kwds):
+def _(obj: str, str_as: str = "string", **kwds) -> str:
     kwds["str_as"] = str_as
     if str_as == "symbol":
         return obj
@@ -437,33 +432,33 @@ def _(obj, str_as="string", **kwds):
 
 
 @tosexp.register(type(None))
-def _(obj, none_as="()", **kwds):
+def _(obj, none_as: str = "()", **kwds) -> str:
     return none_as
 
 
 @tosexp.register(bool)
-def _(obj, false_as="()", true_as="t", **kwds):
+def _(obj: bool, false_as: str = "()", true_as: str = "t", **kwds) -> str:
     return true_as if obj else false_as
 
 
 @tosexp.register(float)
 @tosexp.register(int)
-def _(obj, **kwds):
+def _(obj, **kwds) -> str:
     return str(obj)
 
 
 class String:
-    def __init__(self, object, position=None):
+    def __init__(self, object, position=None) -> None:
         self._s = str(object)
         self.position = position
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.__class__ == other.__class__ and str.__eq__(self._s, other._s)
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         return not self == other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         >>> D = {'a': 1, String('a'): 2, Symbol('a'): 3}
         >>> len(D)
@@ -483,31 +478,32 @@ class String:
 
     _lisp_quoted_to_raw = dict((q, r) for (r, q) in _lisp_quoted_specials)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{0}({1})".format(self.__class__.__name__, str.__repr__(self._s))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._s
 
     @classmethod
-    def quote(cls, string):
+    def quote(cls, string) -> str:
         for s, q in cls._lisp_quoted_specials:
-            if type(string) == str:
+            if isinstance(string, str):
                 string = string.replace(s, q)
             else:
                 string = string._s.replace(s, q)
         return string
 
     @classmethod
-    def unquote(cls, string):
-        return cls._lisp_quoted_to_raw.get(string, string)
+    def unquote(cls, string) -> str:
+        result = cls._lisp_quoted_to_raw.get(string, string)
+        return result if result is not None else string
 
-    def value(self):
+    def value(self) -> str:
         return str(self._s)
 
 
 @tosexp.register(String)
-def _(obj, **kwds):
+def _(obj: String, **kwds) -> str:
     return '"' + String.quote(obj) + '"'
 
 
@@ -532,21 +528,24 @@ class Symbol(String):
 
 
 @tosexp.register(Symbol)
-def _(obj, **kwds):
+def _(obj: Symbol, **kwds) -> str:
     return Symbol.quote(obj)
 
 
 class Quoted(namedtuple("Quoted", "x")):
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{0.__class__.__name__}({0.x!r})".format(self)
 
 
 @tosexp.register(Quoted)
-def _(obj, **kwds):
+def _(obj: Quoted, **kwds) -> str:
     return "'" + tosexp(obj.x, **kwds)
 
 
 class Delimiters(namedtuple("Delimiters", "I")):
+    opener: str = ""
+    closer: str = ""
+
     def __new__(cls, *args):
         if not args:
             raise ValueError("Expected an Iterable/Mapping argument or *args")
@@ -563,7 +562,7 @@ class Delimiters(namedtuple("Delimiters", "I")):
             return tuple.__new__(cls, (tuple(x),))
 
     @staticmethod
-    def from_opener(opener, val):
+    def from_opener(opener: str, val):
         cls_map = dict((cls.opener, cls) for cls in Delimiters.__subclasses__())
         if opener in cls_map.keys():
             return cls_map[opener](val)
@@ -571,12 +570,12 @@ class Delimiters(namedtuple("Delimiters", "I")):
             raise TypeError
 
     @staticmethod
-    def get_brackets():
+    def get_brackets() -> dict[str, str]:
         return {cls.opener: cls.closer for cls in Delimiters.__subclasses__()}
 
 
 @tosexp.register(Delimiters)
-def _(self, **kwds):
+def _(self: Delimiters, **kwds) -> str:
     # Don't break up expressions produced by certain overloads of tosexp
     dont_break = all(
         tosexp.dispatch(type(x)) not in DONT_BREAK_OVERLOADS for x in self.I
@@ -644,7 +643,7 @@ class Parens(Delimiters):
     opener, closer = "(", ")"
 
 
-def bracket(val, bra):
+def bracket(val, bra: str):
     if bra == "(":
         return val
     else:
@@ -654,7 +653,7 @@ def bracket(val, bra):
 class SExpError(Exception):
     """Base class for S-expression parsing errors with position information."""
 
-    def __init__(self, message, position=None):
+    def __init__(self, message: str, position=None) -> None:
         self.position = position
         if position:
             super().__init__(f"{message} at {position}")
@@ -663,7 +662,7 @@ class SExpError(Exception):
 
 
 class ExpectClosingBracket(SExpError):
-    def __init__(self, got, expect, position=None):
+    def __init__(self, got, expect: str, position=None) -> None:
         message = (
             "Not enough closing brackets. "
             f"Expected {expect!r} to be the last letter in the sexp. "
@@ -673,7 +672,7 @@ class ExpectClosingBracket(SExpError):
 
 
 class ExpectNothing(SExpError):
-    def __init__(self, got, position=None):
+    def __init__(self, got, position=None) -> None:
         message = (
             "Too many closing brackets. "
             f"Expected no character left in the sexp. "
@@ -683,32 +682,38 @@ class ExpectNothing(SExpError):
 
 
 class ExpectSExp(SExpError):
-    def __init__(self, position=None):
+    def __init__(self, position=None) -> None:
         message = "No s-exp is found after an apostrophe"
         super().__init__(message, position)
 
 
 class UnterminatedString(SExpError):
-    def __init__(self, position=None):
+    def __init__(self, position=None) -> None:
         message = "Unterminated string literal"
         super().__init__(message, position)
 
 
 class InvalidEscape(SExpError):
-    def __init__(self, escape_char, position=None):
+    def __init__(self, escape_char: str, position=None) -> None:
         message = f"Invalid escape sequence: \\{escape_char}"
         super().__init__(message, position)
 
 
 class Parser(object):
-    brackets: dict
-    closing_brackets: set
-    _atom_end_basic: set
+    brackets: dict[str, str]
+    closing_brackets: set[str]
+    _atom_end_basic: set[str]
     _atom_end_basic_or_escape_regexp: str
 
     def __init__(
-        self, string, string_to=None, nil="nil", true="t", false=None, line_comment=";"
-    ):
+        self,
+        string: str,
+        string_to=None,
+        nil: str = "nil",
+        true: str = "t",
+        false: Optional[str] = None,
+        line_comment: str = ";",
+    ) -> None:
         self.string = string
         self.nil = nil
         self.true = true
@@ -736,7 +741,7 @@ class Parser(object):
             )
         )
 
-    def _build_position_map(self, string):
+    def _build_position_map(self, string: str) -> dict[int, Position]:
         """Build a mapping from string offset to (line, column)"""
         positions = {}
         line, column = 1, 1
@@ -750,13 +755,13 @@ class Parser(object):
         positions[len(string)] = Position(line, column, len(string))
         return positions
 
-    def get_position(self, offset):
+    def get_position(self, offset: int) -> Position:
         """Get position information for a given string offset."""
         return self.position_map.get(offset, Position())
 
-    def parse_str(self, i):
+    def parse_str(self, i: int) -> tuple[int, str]:
         string = self.string
-        chars = []
+        chars: list[str] = []
         append = chars.append
         search = self.quote_or_escape_re.search
 
@@ -775,15 +780,15 @@ class Parser(object):
             elif c == "\\":
                 i = end + 1
                 if i >= len(string):
-                    raise InvalidEscape(end, self.get_position(end))
+                    raise InvalidEscape("EOF", self.get_position(end))
                 append(String.unquote(c + string[i]))
         else:
             raise ExpectClosingBracket('"', self.get_position())
         return (i, "".join(chars))
 
-    def parse_atom(self, i):
+    def parse_atom(self, i: int) -> tuple[int, Any]:
         string = self.string
-        chars = []
+        chars: list[str] = []
         append = chars.append
         search = self.atom_end_or_escape_re.search
         atom_end = self.atom_end
@@ -815,7 +820,7 @@ class Parser(object):
 
         return (i, self.atom("".join(chars), start_pos))
 
-    def atom(self, token, position=None):
+    def atom(self, token: str, position=None):
         if token == self.nil:
             return []
         if token == self.true:
@@ -836,10 +841,10 @@ class Parser(object):
             except ValueError:
                 return Symbol(token, position)
 
-    def parse_sexp(self, i):
+    def parse_sexp(self, i: int) -> tuple[int, list[Any]]:
         string = self.string
         len_string = len(self.string)
-        sexp = []
+        sexp: list[Any] = []
         append = sexp.append
         bracket_stack = []  # Track opening brackets for better error reporting
 
@@ -849,8 +854,8 @@ class Parser(object):
 
             if c == '"':
                 try:
-                    (i, subsexp) = self.parse_str(i)
-                    append(self.string_to(subsexp))
+                    (i, parsed_str) = self.parse_str(i)
+                    append(self.string_to(parsed_str))
                 except SExpError:
                     raise  # Re-raise with position already set
             elif c in whitespace:
@@ -859,8 +864,9 @@ class Parser(object):
             elif c in self.brackets:
                 close = self.brackets[c]
                 bracket_stack.append((c, close, current_pos))
-                (i, subsexp) = self.parse_sexp(i + 1)
-                append(bracket(subsexp, c))
+                (next_i, parsed_sexp) = self.parse_sexp(i + 1)
+                i = next_i
+                append(bracket(parsed_sexp, c))
                 try:
                     nc = string[i]
                 except IndexError:
@@ -880,22 +886,23 @@ class Parser(object):
             elif c == "'":
                 quote_pos = current_pos
                 next_parse_start = i + 1
-                (i, subsexp) = self.parse_sexp(next_parse_start)
-                if not subsexp:
+                (next_i, parsed_sexp) = self.parse_sexp(next_parse_start)
+                i = next_i
+                if not parsed_sexp:
                     raise ExpectSExp(quote_pos)
-                append(Quoted(subsexp[0]))
-                sexp.extend(subsexp[1:])
+                append(Quoted(parsed_sexp[0]))
+                sexp.extend(parsed_sexp[1:])
             elif c == self.line_comment:
                 i = string.find("\n", i) + 1
                 if i <= 0:
                     i = len_string
                     break
             else:
-                (i, subsexp) = self.parse_atom(i)
-                append(subsexp)
+                (i, parsed_atom) = self.parse_atom(i)
+                append(parsed_atom)
         return (i, sexp)
 
-    def parse(self):
+    def parse(self) -> list[Any]:
         try:
             (i, sexp) = self.parse_sexp(0)
             if i < len(self.string):
@@ -908,7 +915,7 @@ class Parser(object):
             raise SExpError(f"Unexpected parsing error: {e}")
 
 
-def parse(string, **kwds):
+def parse(string: str, **kwds) -> list[Any]:
     """
     Parse s-expression.
 
@@ -922,5 +929,5 @@ def parse(string, **kwds):
     [[Symbol('a'), Quoted([Symbol('b')])]]
 
     """
-    assert type(string) == str
+    assert isinstance(string, str)
     return Parser(string, **kwds).parse()
