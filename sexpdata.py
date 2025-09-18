@@ -1,5 +1,5 @@
 # [[[cog import cog; cog.outl('"""\n%s\n"""' % file('README.rst').read()) ]]]
-from typing import List, Tuple
+from typing import Dict, List, Set, Tuple
 
 """
 S-expression parser for Python
@@ -570,7 +570,7 @@ class Delimiters(namedtuple("Delimiters", "I")):
             raise TypeError
 
     @staticmethod
-    def get_brackets() -> dict[str, str]:
+    def get_brackets() -> Dict[str, str]:
         return {cls.opener: cls.closer for cls in Delimiters.__subclasses__()}
 
 
@@ -700,9 +700,9 @@ class InvalidEscape(SExpError):
 
 
 class Parser(object):
-    brackets: dict[str, str]
-    closing_brackets: set[str]
-    _atom_end_basic: set[str]
+    brackets: Dict[str, str]
+    closing_brackets: Set[str]
+    _atom_end_basic: Set[str]
     _atom_end_basic_or_escape_regexp: str
 
     def __init__(
@@ -741,7 +741,7 @@ class Parser(object):
             )
         )
 
-    def _build_position_map(self, string: str) -> dict[int, Position]:
+    def _build_position_map(self, string: str) -> Dict[int, Position]:
         """Build a mapping from string offset to (line, column)"""
         positions = {}
         line, column = 1, 1
@@ -759,7 +759,7 @@ class Parser(object):
         """Get position information for a given string offset."""
         return self.position_map.get(offset, Position())
 
-    def parse_str(self, i: int) -> tuple[int, str]:
+    def parse_str(self, i: int) -> Tuple[int, str]:
         string = self.string
         chars: list[str] = []
         append = chars.append
@@ -786,7 +786,7 @@ class Parser(object):
             raise ExpectClosingBracket('"', self.get_position())
         return (i, "".join(chars))
 
-    def parse_atom(self, i: int) -> tuple[int, Any]:
+    def parse_atom(self, i: int) -> Tuple[int, Any]:
         string = self.string
         chars: list[str] = []
         append = chars.append
@@ -841,7 +841,7 @@ class Parser(object):
             except ValueError:
                 return Symbol(token, position)
 
-    def parse_sexp(self, i: int) -> tuple[int, list[Any]]:
+    def parse_sexp(self, i: int) -> Tuple[int, List[Any]]:
         string = self.string
         len_string = len(self.string)
         sexp: list[Any] = []
@@ -902,7 +902,7 @@ class Parser(object):
                 append(parsed_atom)
         return (i, sexp)
 
-    def parse(self) -> list[Any]:
+    def parse(self) -> List[Any]:
         try:
             (i, sexp) = self.parse_sexp(0)
             if i < len(self.string):
