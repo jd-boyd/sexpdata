@@ -1,5 +1,5 @@
 # [[[cog import cog; cog.outl('"""\n%s\n"""' % file('README.rst').read()) ]]]
-from __future__ import unicode_literals
+from typing import List, Tuple
 
 """
 S-expression parser for Python
@@ -406,7 +406,7 @@ def _(obj, **kwds) -> str:
 
 
 @tosexp.register(tuple)
-def _(obj: tuple[Any, ...], tuple_as: str = "list", **kwds) -> str:
+def _(obj: Tuple[Any, ...], tuple_as: str = "list", **kwds) -> str:
     kwds["tuple_as"] = tuple_as
     if hasattr(obj, "__to_lisp_as__"):
         return tosexp(obj.__to_lisp_as__(), **kwds)
@@ -915,7 +915,7 @@ class Parser(object):
             raise SExpError(f"Unexpected parsing error: {e}")
 
 
-def parse(string: str, **kwds) -> list[Any]:
+def parse(string: str, **kwds) -> List[Any]:
     """
     Parse s-expression.
 
